@@ -19,7 +19,9 @@ export default function ConnexionPage() {
   const [loading, setLoading] = useState(false)
 
   const handleLogin = (e: React.FormEvent) => {
+    
     e.preventDefault()
+
     setLoading(true)
 
     // Simuler une connexion
@@ -106,24 +108,25 @@ export default function ConnexionPage() {
               </Button>
             </form>
 
-            <div className="relative my-6">
-              <Separator />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="bg-white px-2 text-sm text-gray-500">Ou continuer avec</span>
+            {/*
+              <div className="relative my-6">
+                <Separator />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="bg-white px-2 text-sm text-gray-500">Ou continuer avec</span>
+                </div>
               </div>
-            </div>
+              
 
-            <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" className="w-full">
-                <Target className="mr-2 h-4 w-4" />
-                Google
-              </Button>
-              <Button variant="outline" className="w-full">
-                <Facebook className="mr-2 h-4 w-4" />
-                Facebook
-              </Button>
-            </div>
-
+              <div className="grid grid-cols-2 gap-4">
+                <Button variant="outline" className="w-full">
+                  <Target className="mr-2 h-4 w-4" />
+                  Google
+                </Button>
+                <Button variant="outline" className="w-full">
+                  <Facebook className="mr-2 h-4 w-4" />
+                  Facebook
+                </Button>
+              </div>
             <div className="mt-6 p-4 bg-gray-50 rounded-md border border-gray-100">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
@@ -151,6 +154,8 @@ export default function ConnexionPage() {
                 <p>Client: customer@example.com / password</p>
               </div>
             </div>
+            */}
+
           </CardContent>
         </Card>
       </div>

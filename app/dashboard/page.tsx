@@ -17,26 +17,20 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold tracking-tight">Tableau de bord</h1>
           <p className="text-muted-foreground">Bienvenue sur votre tableau de bord AssurVente.</p>
         </div>
-        <div className="flex items-center gap-2">
+        {/*<div className="flex items-center gap-2">
           <Button variant="outline">Télécharger le rapport</Button>
           <Button className="bg-blue-600 hover:bg-blue-700">Ajouter un produit</Button>
-        </div>
+        </div>*/}
       </div>
 
       <Tabs defaultValue="apercu" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="apercu">Aperçu</TabsTrigger>
-          <TabsTrigger value="analytique">Analytique</TabsTrigger>
-          <TabsTrigger value="rapports">Rapports</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-        </TabsList>
+
 
         <TabsContent value="apercu" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Ventes totales</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">12,345,678 XOF</div>
