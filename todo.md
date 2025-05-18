@@ -28,9 +28,9 @@
 ## 3️⃣ Frontend/API : Test de connexion
 
 - [x] Créer route `pages/api/test.ts` pour tester la connexion
-- [ ] Créer route `pages/api/produits.ts` pour gérer les produits
-- [ ] Créer route `pages/api/commandes.ts` pour gérer les commandes
-- [ ] Créer route `pages/api/paiements.ts` pour gérer les paiements
+- [x] Créer route `pages/api/produits.ts` pour gérer les produits
+- [x] Créer route `pages/api/commandes.ts` pour gérer les commandes
+- [x] Créer route `pages/api/paiements.ts` pour gérer les paiements
 
 ---
 

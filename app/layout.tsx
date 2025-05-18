@@ -9,7 +9,6 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "AssurVente - Matériel Électroménager",
   description: "Plateforme de vente de matériel électroménager",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({

@@ -19,7 +19,11 @@ export async function POST(req: Request) {
 }
 
 // 📦 Obtenir la liste des produits
-export async function GET() {
+export async function GET(req: Request) {
+
+    const error = validateApiKey(req);
+    if (error) return error;
+
     try {
         const db = await mongo.connectToDb();
         const produits = await db.collection("produits").find().toArray();
