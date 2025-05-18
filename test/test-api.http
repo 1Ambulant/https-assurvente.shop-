@@ -1,0 +1,63 @@
+### 🔄 GET tous les produits
+GET http://localhost:3000/api/produits
+Accept: application/json
+
+@id = 682a212034e479ff1f5078a6
+
+###
+
+### ➕ POST un produit
+POST http://localhost:3000/api/produits
+Content-Type: application/json
+
+{
+  "nom": "Table de Bureau OZ-7002-12",
+  "prix": 235000,
+  "stock": 5,
+  "description": "Table de bureau compacte avec tiroirs, parfaite pour les espaces de travail restreints.",
+  "image": "https://promo.sn/wp-content/uploads/2023/12/WhatsApp-Image-2023-12-03-a-20.59.19_2b39f7bb-555x360.jpg"
+}
+
+###
+
+### 🔄 GET toutes les commandes
+GET http://localhost:3000/api/commandes
+Accept: application/json
+
+###
+
+### ➕ POST une commande
+POST http://localhost:3000/api/commandes
+Content-Type: application/json
+
+{
+  "produitId": "123456789",
+  "clientId": "client001",
+  "quantite": 2,
+  "montantTotal": 240000,
+  "paiementEchelonne": true,
+  "nombreEcheances": 2,
+  "acompteInitial": 50,
+  "statut": "en cours",
+  "dateCommande": "2025-05-18T10:00:00Z"
+}
+
+###
+
+### 🔄 GET tous les paiements
+GET http://localhost:3000/api/paiements
+Accept: application/json
+
+###
+
+### ➕ POST un paiement
+POST http://localhost:3000/api/paiements
+Content-Type: application/json
+
+{
+  "commandeId": "987654321",
+  "montant": 60000,
+  "datePaiement": "2025-05-18T12:00:00Z",
+  "moyenPaiement": "mobile money",
+  "statut": "effectué"
+}
