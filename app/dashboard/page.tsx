@@ -17,10 +17,6 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold tracking-tight">Tableau de bord</h1>
           <p className="text-muted-foreground">Bienvenue sur votre tableau de bord AssurVente.</p>
         </div>
-        {/*<div className="flex items-center gap-2">
-          <Button variant="outline">Télécharger le rapport</Button>
-          <Button className="bg-blue-600 hover:bg-blue-700">Ajouter un produit</Button>
-        </div>*/}
       </div>
 
       <Tabs defaultValue="apercu" className="space-y-4">
@@ -190,13 +186,13 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          <Alert className="bg-blue-50 border-blue-200">
+          {/* <Alert className="bg-blue-50 border-blue-200">
             <Bell className="h-4 w-4 text-blue-600" />
             <AlertTitle className="text-blue-600">Rappel!</AlertTitle>
             <AlertDescription>
               Vous avez 5 commandes à expédier aujourd'hui, 3 paiements à confirmer et 2 produits à localiser.
             </AlertDescription>
-          </Alert>
+          </Alert> */}
         </TabsContent>
       </Tabs>
     </div>

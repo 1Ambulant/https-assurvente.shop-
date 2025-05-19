@@ -12,5 +12,5 @@ export function validateApiKey(request: Request): NextResponse | null {
     );
   }
 
-  return null; // OK
+  return null;
 }

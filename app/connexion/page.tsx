@@ -17,19 +17,44 @@ export default function ConnexionPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
-    
-    e.preventDefault()
 
-    setLoading(true)
-
-    // Simuler une connexion
-    setTimeout(() => {
-      setLoading(false)
-      router.push("/dashboard")
-    }, 1000)
-  }
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+  
+    const email = (document.getElementById("email") as HTMLInputElement).value;
+    const motDePasse = (document.getElementById("password") as HTMLInputElement).value;
+  
+    try {
+      const res = await fetch("/api/users/login?api_key=super-cle-api-123456", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email, motDePasse })
+      });
+  
+      const data = await res.json();
+  
+      if (!res.ok) {
+        throw new Error(data.error || "Erreur de connexion");
+      }
+  
+      // ✅ Stocker le token dans localStorage
+      localStorage.setItem("token", data.token);
+  
+      // ✅ Rediriger
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -106,55 +131,8 @@ export default function ConnexionPage() {
               <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={loading}>
                 {loading ? "Connexion en cours..." : "Se connecter"}
               </Button>
+              {error && <p className="text-sm text-red-500 text-center">{error}</p>}
             </form>
-
-            {/*
-              <div className="relative my-6">
-                <Separator />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="bg-white px-2 text-sm text-gray-500">Ou continuer avec</span>
-                </div>
-              </div>
-              
-
-              <div className="grid grid-cols-2 gap-4">
-                <Button variant="outline" className="w-full">
-                  <Target className="mr-2 h-4 w-4" />
-                  Google
-                </Button>
-                <Button variant="outline" className="w-full">
-                  <Facebook className="mr-2 h-4 w-4" />
-                  Facebook
-                </Button>
-              </div>
-            <div className="mt-6 p-4 bg-gray-50 rounded-md border border-gray-100">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-green-600"
-                  >
-                    <path d="M20 6 9 17l-5-5" />
-                  </svg>
-                </div>
-                <span className="text-sm font-medium">Comptes de démonstration</span>
-              </div>
-              <div className="text-xs text-gray-600 space-y-1">
-                <p>Utilisez les identifiants suivants :</p>
-                <p>Admin: admin@example.com / password</p>
-                <p>Partenaire: partner@example.com / password</p>
-                <p>Client: customer@example.com / password</p>
-              </div>
-            </div>
-            */}
 
           </CardContent>
         </Card>
