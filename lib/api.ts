@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://assurvente.shop/api";
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY || "super-cle-api-123456";
 
 const api = axios.create({
@@ -13,7 +13,7 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  
+
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
