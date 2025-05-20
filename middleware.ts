@@ -16,7 +16,6 @@ export async function middleware(request: NextRequest) {
     try {
       const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
       const { payload } = await jwtVerify(token, secret);
-      console.log("✅ Token décodé (Edge) :", payload);
     } catch (err) {
       console.warn("⛔ Token invalide (Edge middleware)");
       return NextResponse.redirect(new URL("/connexion", request.url));

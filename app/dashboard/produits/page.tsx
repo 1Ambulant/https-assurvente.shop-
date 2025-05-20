@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { produitsAPI } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -26,6 +27,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MoreHorizontal, Plus, Search, SlidersHorizontal } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+
+interface Produit {
+  _id: string
+  nom: string
+  prix: number
+  stock: number
+  description?: string
+  image?: string
+  statut: string
+  categorie: string
+  marque: string
+}
 
 const produitsData = [
   {
@@ -117,11 +130,26 @@ export default function ProduitsPage() {
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
 
+  const [produits, setProduits] = useState<Produit[]>([])
+
+  useEffect(() => {
+    const loadProduits = async () => {
+      try {
+        const response = await produitsAPI.getAll()
+        setProduits(response.data)
+      } catch (error) {
+        console.error("Erreur de chargement des produits :", error)
+      }
+    }
+
+    loadProduits()
+  }, [])
+
   // Filtrer les produits en fonction des critères
-  const filteredProducts = produitsData.filter((produit) => {
+  const filteredProducts = produits.filter((produit) => {
     const matchesSearch =
       produit.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      produit.id.toLowerCase().includes(searchTerm.toLowerCase())
+      produit._id.toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesCategory = selectedCategory ? produit.categorie === selectedCategory : true
     const matchesStatus = selectedStatus ? produit.statut === selectedStatus : true
@@ -162,7 +190,7 @@ export default function ProduitsPage() {
           />
         </div>
 
-        <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
+        {/* <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm">
               <SlidersHorizontal className="mr-2 h-4 w-4" /> Filtrer
@@ -242,7 +270,7 @@ export default function ProduitsPage() {
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+        </Dialog> */}
       </div>
 
       <div className="border rounded-md">
@@ -250,7 +278,6 @@ export default function ProduitsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Produit</TableHead>
-              <TableHead>Catégorie</TableHead>
               <TableHead>Prix</TableHead>
               <TableHead>Stock</TableHead>
               <TableHead>Statut</TableHead>
@@ -260,7 +287,7 @@ export default function ProduitsPage() {
           <TableBody>
             {filteredProducts.length > 0 ? (
               filteredProducts.map((produit) => (
-                <TableRow key={produit.id}>
+                <TableRow key={produit._id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Image
@@ -272,11 +299,10 @@ export default function ProduitsPage() {
                       />
                       <div>
                         <div className="font-medium">{produit.nom}</div>
-                        <div className="text-sm text-muted-foreground">{produit.id}</div>
+                        <div className="text-sm text-muted-foreground">{produit._id}</div>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{produit.categorie}</TableCell>
                   <TableCell>{produit.prix}</TableCell>
                   <TableCell>{produit.stock}</TableCell>
                   <TableCell>
