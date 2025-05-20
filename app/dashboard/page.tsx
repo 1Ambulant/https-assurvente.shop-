@@ -186,13 +186,6 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {/* <Alert className="bg-blue-50 border-blue-200">
-            <Bell className="h-4 w-4 text-blue-600" />
-            <AlertTitle className="text-blue-600">Rappel!</AlertTitle>
-            <AlertDescription>
-              Vous avez 5 commandes à expédier aujourd'hui, 3 paiements à confirmer et 2 produits à localiser.
-            </AlertDescription>
-          </Alert> */}
         </TabsContent>
       </Tabs>
     </div>

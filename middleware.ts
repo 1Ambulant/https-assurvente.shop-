@@ -1,22 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
+import { jwtVerify } from "jose";
 
-export function middleware(request: NextRequest) {
-    const token = request.cookies.get("token")?.value;
+export async function middleware(request: NextRequest) {
+  const token = request.cookies.get("token")?.value;
 
-    console.log("Token:", token);
-    console.log("Request URL:", request.url);
+  const isPublic =
+    request.nextUrl.pathname === "/" ||
+    request.nextUrl.pathname.startsWith("/connexion");
 
-    const isProtected =
-        !request.nextUrl.pathname.startsWith("/connexion") &&
-        request.nextUrl.pathname !== "/";
+  if (!token && !isPublic) {
+    return NextResponse.redirect(new URL("/connexion", request.url));
+  }
 
-    if (isProtected && !token) {
-        return NextResponse.redirect(new URL("/connexion", request.url));
+  if (token) {
+    try {
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+      const { payload } = await jwtVerify(token, secret);
+      console.log("✅ Token décodé (Edge) :", payload);
+    } catch (err) {
+      console.warn("⛔ Token invalide (Edge middleware)");
+      return NextResponse.redirect(new URL("/connexion", request.url));
     }
+  }
 
-    return NextResponse.next();
+  return NextResponse.next();
 }
 
 export const config = {
-    matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

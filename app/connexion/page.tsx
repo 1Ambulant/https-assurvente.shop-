@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Separator } from "@/components/ui/separator"
 import { Card, CardContent } from "@/components/ui/card"
 
 export default function ConnexionPage() {
@@ -42,6 +41,8 @@ export default function ConnexionPage() {
       if (!res.ok) {
         throw new Error(data.error || "Erreur de connexion");
       }
+
+      console.log("Connexion réussie", data);
   
       // ✅ Stocker le token dans localStorage
       localStorage.setItem("token", data.token);
