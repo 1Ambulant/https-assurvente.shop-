@@ -1,8 +1,7 @@
 import axios from "axios";
 
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://assurvente.shop/api";
-// const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+// const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://assurvente.shop/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
 
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY || "super-cle-api-123456";
 
@@ -69,6 +68,7 @@ export const commandesAPI = {
     paiementEchelonne?: boolean;
     nombreEcheances?: number;
     acompteInitial?: number;
+    commande: string;
     statut: "preparation" | "expediee" | "livree" | "annulee";
     paiement: "attente" | "paye" | "rembourse";
     dateCommande: string;
@@ -84,6 +84,7 @@ export const paiementsAPI = {
     datePaiement: string;
     moyenPaiement: string;
     statut: string;
+    commande: string;
   }) => api.post("/paiements", data),
 };
 
@@ -103,4 +104,25 @@ export const clientsAPI = {
     dateInscription?: string;
   }) => api.post("/clients", data),
 }
+
+// 📡 Partenaires
+export const partenariatsAPI = {
+  getAll: () => api.get("/partenaires"),
+  create: (data: {
+    nom: string;
+    type: string;
+    contact: string;
+    telephone: string;
+    adresse?: string;
+    description?: string;
+    acces: {
+      geolocalisation: boolean;
+      controle: boolean;
+      statistiques: boolean;
+      clients: boolean;
+    };
+    statut?: "actif" | "inactif";
+  }) => api.post("/partenaires", data),
+};
+
 export default api;

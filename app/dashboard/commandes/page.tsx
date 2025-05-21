@@ -59,6 +59,7 @@ export default function CommandesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [commande, setCommande] = useState<string>("");
 
   const [clients, setClients] = useState<Client[]>([])
   const [produits, setProduits] = useState<Produit[]>([])
@@ -89,22 +90,24 @@ export default function CommandesPage() {
 
   const handleAddCommande = async (e: React.FormEvent) => {
     e.preventDefault()
-
+    setLoading(true)
+  
     const produit = produits.find(p => p._id === produitId)
-    if (!produit) return
-
-    let montant = produit.prix * quantite;
-
-    // Si paiement échelonné, appliquer une majoration (par exemple 5% par mois)
+    const client = clients.find(c => c._id === clientId)
+  
+    if (!produit || !client) {
+      alert("Client ou produit introuvable.")
+      return
+    }
+  
+    let montant = produit.prix * quantite
+  
     if (paiementEchelonne && nombreEcheances > 1) {
       const tauxMajoration = 0.05
       montant *= 1 + tauxMajoration * nombreEcheances
     }
-
-    const nouvelleCommande: Omit<Commande, "_id"> & {
-      paiementEchelonne: boolean
-      nombreEcheances?: number
-    } = {
+  
+    const nouvelleCommande: Omit<Commande, "_id"> & { commande: string } = {
       clientId,
       produitId,
       quantite,
@@ -114,8 +117,9 @@ export default function CommandesPage() {
       dateCommande: new Date().toISOString(),
       paiementEchelonne,
       ...(paiementEchelonne ? { nombreEcheances } : {}),
+      commande: `${client.prenom} ${client.nom} - ${produit.nom}`,
     }
-
+  
     try {
       const res = await commandesAPI.create(nouvelleCommande)
       setCommandes(prev => [...prev, res.data])
@@ -126,6 +130,7 @@ export default function CommandesPage() {
       setLoading(false)
     }
   }
+  
 
   const filteredCommandes = commandes.filter(c =>
     c.clientId.toLowerCase().includes(searchTerm.toLowerCase())

@@ -1,15 +1,42 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { ArrowUpRight, Bell, DollarSign, ShoppingBag, Users, MapPin, Handshake } from "lucide-react"
+import {
+  ArrowUpRight, Bell, DollarSign, ShoppingBag, Users, MapPin, Handshake
+} from "lucide-react"
 import { VentesRecentes } from "@/components/dashboard/ventes-recentes"
 import { CommandesRecentes } from "@/components/dashboard/commandes-recentes"
 import { GraphiqueVentes } from "@/components/dashboard/graphique-ventes"
 import { GraphiqueCategories } from "@/components/dashboard/graphique-categories"
-import Link from "next/link"
 
 export default function DashboardPage() {
+  const [stats, setStats] = useState({
+    ventesTotal: 0,
+    clients: 0,
+    commandes: 0,
+    conversion: 0,
+    partenaires: 0,
+    demandes: 0,
+  })
+
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      try {
+        const res = await fetch("/api/dashboard")
+        const data = await res.json()
+        setStats(data)
+      } catch (error) {
+        console.error("Erreur chargement stats dashboard", error)
+      }
+    }
+
+    fetchDashboardStats()
+  }, [])
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between gap-4 md:items-center">
@@ -20,16 +47,16 @@ export default function DashboardPage() {
       </div>
 
       <Tabs defaultValue="apercu" className="space-y-4">
-
-
         <TabsContent value="apercu" className="space-y-4">
+          {/* Statistiques principales */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Ventes totales</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">12,345,678 XOF</div>
+                <div className="text-2xl font-bold">{stats.ventesTotal.toLocaleString()} XOF</div>
                 <p className="text-xs text-muted-foreground">+18% par rapport au mois dernier</p>
               </CardContent>
             </Card>
@@ -40,7 +67,7 @@ export default function DashboardPage() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">+573</div>
+                <div className="text-2xl font-bold">{stats.clients}</div>
                 <p className="text-xs text-muted-foreground">+201 depuis la dernière semaine</p>
               </CardContent>
             </Card>
@@ -51,7 +78,7 @@ export default function DashboardPage() {
                 <ShoppingBag className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">45</div>
+                <div className="text-2xl font-bold">{stats.commandes}</div>
                 <p className="text-xs text-muted-foreground">12 en attente de livraison</p>
               </CardContent>
             </Card>
@@ -62,12 +89,13 @@ export default function DashboardPage() {
                 <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">24.3%</div>
+                <div className="text-2xl font-bold">{stats.conversion}%</div>
                 <p className="text-xs text-muted-foreground">+5.1% par rapport au mois dernier</p>
               </CardContent>
             </Card>
           </div>
 
+          {/* Graphiques */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">
               <CardHeader>
@@ -88,7 +116,7 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {/* Accès rapides aux fonctionnalités principales */}
+          {/* Accès rapide */}
           <div className="grid gap-4 md:grid-cols-3">
             <Card>
               <CardHeader className="pb-2">
@@ -96,18 +124,7 @@ export default function DashboardPage() {
                 <CardDescription>Suivez vos produits, clients et livreurs</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
-                <div className="h-32 bg-gray-100 rounded-md flex items-center justify-center relative">
-                  <div className="absolute inset-0">
-                    <div className="absolute top-[30%] left-[40%]">
-                      <div className="h-3 w-3 bg-blue-600 rounded-full animate-pulse"></div>
-                    </div>
-                    <div className="absolute top-[45%] left-[60%]">
-                      <div className="h-3 w-3 bg-green-600 rounded-full animate-pulse"></div>
-                    </div>
-                    <div className="absolute top-[55%] left-[35%]">
-                      <div className="h-3 w-3 bg-red-600 rounded-full animate-pulse"></div>
-                    </div>
-                  </div>
+                <div className="h-32 bg-gray-100 rounded-md flex items-center justify-center">
                   <MapPin className="h-8 w-8 text-blue-600" />
                 </div>
                 <Button asChild className="w-full mt-2">
@@ -123,20 +140,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="h-32 bg-gray-100 rounded-md flex items-center justify-center">
-                  <div className="grid grid-cols-3 gap-2 w-full px-4">
-                    <div className="flex flex-col items-center">
-                      <div className="h-6 w-6 rounded-full bg-green-500 mb-1"></div>
-                      <p className="text-xs text-center">Réfrigérateur</p>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <div className="h-6 w-6 rounded-full bg-red-500 mb-1"></div>
-                      <p className="text-xs text-center">Climatiseur</p>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <div className="h-6 w-6 rounded-full bg-green-500 mb-1"></div>
-                      <p className="text-xs text-center">TV</p>
-                    </div>
-                  </div>
+                  <p className="text-sm">Interface de contrôle</p>
                 </div>
                 <Button asChild className="w-full mt-2">
                   <Link href="/dashboard/controle">Accéder au contrôle</Link>
@@ -153,8 +157,8 @@ export default function DashboardPage() {
                 <div className="h-32 bg-gray-100 rounded-md flex items-center justify-center">
                   <div className="flex flex-col items-center">
                     <Handshake className="h-8 w-8 text-blue-600 mb-2" />
-                    <p className="text-sm font-medium">6 partenaires actifs</p>
-                    <p className="text-xs text-gray-500">2 demandes en attente</p>
+                    <p className="text-sm font-medium">{stats.partenaires} partenaires actifs</p>
+                    <p className="text-xs text-gray-500">{stats.demandes} demandes en attente</p>
                   </div>
                 </div>
                 <Button asChild className="w-full mt-2">
@@ -164,11 +168,12 @@ export default function DashboardPage() {
             </Card>
           </div>
 
+          {/* Historique */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">
               <CardHeader>
                 <CardTitle>Ventes récentes</CardTitle>
-                <CardDescription>Vous avez effectué 265 ventes ce mois-ci.</CardDescription>
+                <CardDescription>Historique des dernières ventes</CardDescription>
               </CardHeader>
               <CardContent>
                 <VentesRecentes />
@@ -178,14 +183,13 @@ export default function DashboardPage() {
             <Card className="col-span-3">
               <CardHeader>
                 <CardTitle>Commandes récentes</CardTitle>
-                <CardDescription>Vous avez 45 commandes en cours.</CardDescription>
+                <CardDescription>Commandes en cours de traitement</CardDescription>
               </CardHeader>
               <CardContent>
                 <CommandesRecentes />
               </CardContent>
             </Card>
           </div>
-
         </TabsContent>
       </Tabs>
     </div>

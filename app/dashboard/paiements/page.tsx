@@ -1,130 +1,103 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenuSeparator, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogDescription, DialogFooter,
+  DialogHeader, DialogTitle, DialogTrigger
 } from "@/components/ui/dialog"
 import { CreditCard, Filter, MoreHorizontal, Search } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-
-const paiements = [
-  {
-    id: "PAY-001",
-    vente: "VNT-001",
-    client: "Martin Dubois",
-    montant: "450,000 XOF",
-    date: "15/05/2025",
-    methode: "Carte bancaire",
-    statut: "complété",
-    reference: "CB-123456",
-  },
-  {
-    id: "PAY-002",
-    vente: "VNT-003",
-    client: "Sophie Lefebvre",
-    montant: "325,000 XOF",
-    date: "12/05/2025",
-    methode: "Virement bancaire",
-    statut: "complété",
-    reference: "VB-789012",
-  },
-  {
-    id: "PAY-003",
-    vente: "VNT-004",
-    client: "Groupe Gamma",
-    montant: "470,000 XOF",
-    date: "10/05/2025",
-    methode: "Chèque",
-    statut: "complété",
-    reference: "CH-345678",
-  },
-  {
-    id: "PAY-004",
-    vente: "VNT-002",
-    client: "Entreprise Alpha",
-    montant: "550,000 XOF",
-    date: "14/05/2025",
-    methode: "Virement bancaire",
-    statut: "en attente",
-    reference: "VB-901234",
-  },
-  {
-    id: "PAY-005",
-    vente: "VNT-005",
-    client: "Thomas Moreau",
-    montant: "185,000 XOF",
-    date: "08/05/2025",
-    methode: "Mobile Money",
-    statut: "en attente",
-    reference: "MM-567890",
-  },
-  {
-    id: "PAY-006",
-    vente: "VNT-007",
-    client: "Camille Petit",
-    montant: "95,000 XOF",
-    date: "03/05/2025",
-    methode: "Carte bancaire",
-    statut: "complété",
-    reference: "CB-234567",
-  },
-  {
-    id: "PAY-007",
-    vente: "VNT-006",
-    client: "Société Beta",
-    montant: "375,000 XOF",
-    date: "05/05/2025",
-    methode: "Virement bancaire",
-    statut: "annulé",
-    reference: "VB-890123",
-  },
-]
+import { paiementsAPI, commandesAPI } from "@/lib/api"
 
 export default function PaiementsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  // Filtrer les paiements en fonction de la recherche
-  const filteredPaiements = paiements.filter(
-    (paiement) =>
-      paiement.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      paiement.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      paiement.vente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      paiement.reference.toLowerCase().includes(searchTerm.toLowerCase()),
+  const [paiements, setPaiements] = useState<any[]>([])
+  const [commandes, setCommandes] = useState<any[]>([])
+
+  const [selectedCommandeId, setSelectedCommandeId] = useState("")
+  const [montant, setMontant] = useState("")
+  const [date, setDate] = useState(() =>
+    new Date().toISOString().split("T")[0]
+  )
+  const [methode, setMethode] = useState("")
+  const [statut, setStatut] = useState("complete")
+
+  const fetchPaiements = async () => {
+    try {
+      const res = await paiementsAPI.getAll()
+      setPaiements(res.data)
+    } catch (err) {
+      console.error("Erreur chargement paiements", err)
+    }
+  }
+
+  const fetchCommandes = async () => {
+    try {
+      const res = await commandesAPI.getAll()
+      setCommandes(res.data)
+    } catch (err) {
+      console.error("Erreur chargement commandes", err)
+    }
+  }
+
+  useEffect(() => {
+    fetchPaiements()
+    fetchCommandes()
+  }, [])
+
+  const filteredPaiements = paiements.filter(p =>
+    (p?.commandeId ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p?.moyenPaiement ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p?.statut ?? "").toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handleAddPaiement = (e: React.FormEvent) => {
+  const handleAddPaiement = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    // Simuler l'ajout d'un paiement
-    setTimeout(() => {
-      setLoading(false)
+    const commande = commandes.find((c) => c._id === selectedCommandeId)
+    if (!commande) return
+
+    try {
+      await paiementsAPI.create({
+        commandeId: selectedCommandeId,
+        montant: Number(montant),
+        datePaiement: date,
+        moyenPaiement: methode,
+        statut,
+        commande: commande.commande
+      })
+
+      setSelectedCommandeId("")
+      setMontant("")
+      setDate("")
+      setMethode("")
+      setStatut("complete")
       setDialogOpen(false)
-    }, 1500)
+      fetchPaiements()
+    } catch (err) {
+      console.error("Erreur ajout paiement", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (commandes.length > 0) {
+    console.log("Commandes:", commandes)
   }
 
   return (
@@ -149,51 +122,50 @@ export default function PaiementsPage() {
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="vente">Vente associée</Label>
-                  <Select>
+                  <Select value={selectedCommandeId} onValueChange={setSelectedCommandeId}>
                     <SelectTrigger id="vente">
                       <SelectValue placeholder="Sélectionnez une vente" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="vnt002">VNT-002 - Entreprise Alpha (550,000 XOF)</SelectItem>
-                      <SelectItem value="vnt005">VNT-005 - Thomas Moreau (185,000 XOF)</SelectItem>
+                      {commandes.map((c) => (
+                        <SelectItem key={c._id} value={c._id!}>
+                          {c.commande} ({c.montantTotal} XOF)
+                        </SelectItem>
+                      ))}
                     </SelectContent>
+
                   </Select>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="montant">Montant (XOF)</Label>
-                  <Input id="montant" type="number" placeholder="Ex: 450000" />
+                  <Input id="montant" type="number" value={montant} onChange={(e) => setMontant(e.target.value)} />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="methode">Méthode de paiement</Label>
-                  <Select>
+                  <Select value={methode} onValueChange={setMethode}>
                     <SelectTrigger id="methode">
                       <SelectValue placeholder="Sélectionnez une méthode" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="carte">Carte bancaire</SelectItem>
-                      <SelectItem value="virement">Virement bancaire</SelectItem>
-                      <SelectItem value="cheque">Chèque</SelectItem>
-                      <SelectItem value="mobile">Mobile Money</SelectItem>
+                      <SelectItem value="wave">Wave</SelectItem>
+                      <SelectItem value="mobile">Orange Money</SelectItem>
                       <SelectItem value="especes">Espèces</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="reference">Référence du paiement</Label>
-                  <Input id="reference" placeholder="Ex: CB-123456" />
-                </div>
-
-                <div className="space-y-2">
                   <Label htmlFor="date">Date du paiement</Label>
-                  <Input id="date" type="date" />
+                  <Input id="date" type="date" value={date} readOnly />
                 </div>
 
+
                 <div className="space-y-2">
-                  <Label htmlFor="statut">Statut du paiement</Label>
-                  <Select defaultValue="complete">
+                  <Label htmlFor="statut">Statut</Label>
+                  <Select value={statut} onValueChange={setStatut}>
                     <SelectTrigger id="statut">
                       <SelectValue placeholder="Sélectionnez un statut" />
                     </SelectTrigger>
@@ -204,16 +176,9 @@ export default function PaiementsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea id="notes" placeholder="Notes supplémentaires..." />
-                </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                  Annuler
-                </Button>
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
                 <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={loading}>
                   {loading ? "Enregistrement..." : "Enregistrer"}
                 </Button>
@@ -243,45 +208,29 @@ export default function PaiementsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>ID</TableHead>
-              <TableHead>Vente</TableHead>
-              <TableHead>Client</TableHead>
+              <TableHead>Commande</TableHead>
               <TableHead>Montant</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Méthode</TableHead>
-              <TableHead>Référence</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredPaiements.length > 0 ? (
-              filteredPaiements.map((paiement) => (
-                <TableRow key={paiement.id}>
-                  <TableCell className="font-medium">{paiement.id}</TableCell>
-                  <TableCell>{paiement.vente}</TableCell>
-                  <TableCell>{paiement.client}</TableCell>
-                  <TableCell>{paiement.montant}</TableCell>
-                  <TableCell>{paiement.date}</TableCell>
-                  <TableCell>{paiement.methode}</TableCell>
-                  <TableCell>{paiement.reference}</TableCell>
+              filteredPaiements.map((p) => (
+                <TableRow key={p._id}>
+                  <TableCell>{p._id}</TableCell>
+                  <TableCell>{p.commande}</TableCell>
+                  <TableCell>{p.montant} XOF</TableCell>
+                  <TableCell>{p.datePaiement}</TableCell>
+                  <TableCell>{p.moyenPaiement}</TableCell>
                   <TableCell>
                     <Badge
-                      variant={
-                        paiement.statut === "complété"
-                          ? "default"
-                          : paiement.statut === "en attente"
-                            ? "outline"
-                            : "destructive"
-                      }
-                      className={
-                        paiement.statut === "complété"
-                          ? "bg-green-500"
-                          : paiement.statut === "en attente"
-                            ? "bg-yellow-500 text-yellow-800"
-                            : ""
-                      }
+                      variant={p.statut === "complete" ? "default" : p.statut === "attente" ? "outline" : "destructive"}
+                      className={p.statut === "complete" ? "bg-green-500" : p.statut === "attente" ? "bg-yellow-500 text-yellow-800" : ""}
                     >
-                      {paiement.statut}
+                      {p.statut}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
@@ -289,7 +238,6 @@ export default function PaiementsPage() {
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
                           <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Menu</span>
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
@@ -307,12 +255,8 @@ export default function PaiementsPage() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8">
-                  <div className="flex flex-col items-center justify-center">
-                    <Search className="h-8 w-8 text-gray-400 mb-2" />
-                    <h3 className="text-lg font-medium">Aucun paiement trouvé</h3>
-                    <p className="text-sm text-gray-500">Essayez de modifier vos critères de recherche.</p>
-                  </div>
+                <TableCell colSpan={7} className="text-center py-8">
+                  Aucun paiement trouvé.
                 </TableCell>
               </TableRow>
             )}

@@ -58,9 +58,9 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
       icon: ShoppingBag,
     },
     {
-      title: "Ventes",
-      href: "/dashboard/ventes",
-      icon: ShoppingCart,
+      title: "Paiements",
+      href: "/dashboard/paiements",
+      icon: CreditCard,
     },
     {
       title: "Livraisons",
@@ -68,9 +68,9 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
       icon: Truck,
     },
     {
-      title: "Paiements",
-      href: "/dashboard/paiements",
-      icon: CreditCard,
+      title: "Partenaires",
+      href: "/dashboard/partenaires",
+      icon: Handshake,
     },
     {
       title: "Géolocalisation",
@@ -81,11 +81,6 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
       title: "Contrôle à distance",
       href: "/dashboard/controle",
       icon: RemoteControl,
-    },
-    {
-      title: "Partenaires",
-      href: "/dashboard/partenaires",
-      icon: Handshake,
     },
     {
       title: "Statistiques",
