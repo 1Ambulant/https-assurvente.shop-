@@ -1,6 +1,9 @@
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://assurvente.shop/api";
+
+// const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://assurvente.shop/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY || "super-cle-api-123456";
 
 const api = axios.create({
@@ -90,8 +93,12 @@ export const clientsAPI = {
     prenom: string;
     email: string;
     telephone: string;
-    adresse: string;
+    adresse?: string;
+    ville?: string;
+    pays?: string;
+    type?: "Particulier" | "Entreprise";
+    statut?: "actif" | "inactif";
+    dateInscription?: string;
   }) => api.post("/clients", data),
-};
-
+}
 export default api;

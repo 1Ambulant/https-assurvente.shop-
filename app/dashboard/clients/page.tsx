@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -28,103 +27,96 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Filter, MoreHorizontal, Search, UserPlus } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { clientsAPI } from "@/lib/api"
 
-const clients = [
-  {
-    id: "CLI-001",
-    nom: "Martin Dubois",
-    initiales: "MD",
-    email: "martin.dubois@example.com",
-    telephone: "+225 01 23 45 67 89",
-    statut: "actif",
-    type: "Particulier",
-    dateInscription: "15/01/2025",
-  },
-  {
-    id: "CLI-002",
-    nom: "Entreprise Alpha",
-    initiales: "EA",
-    email: "contact@alpha.com",
-    telephone: "+225 01 98 76 54 32",
-    statut: "actif",
-    type: "Entreprise",
-    dateInscription: "22/02/2025",
-  },
-  {
-    id: "CLI-003",
-    nom: "Sophie Lefebvre",
-    initiales: "SL",
-    email: "sophie.lefebvre@example.com",
-    telephone: "+225 07 65 43 21 09",
-    statut: "inactif",
-    type: "Particulier",
-    dateInscription: "05/03/2025",
-  },
-  {
-    id: "CLI-004",
-    nom: "Groupe Gamma",
-    initiales: "GG",
-    email: "info@gamma-group.com",
-    telephone: "+225 05 43 21 09 87",
-    statut: "actif",
-    type: "Entreprise",
-    dateInscription: "18/03/2025",
-  },
-  {
-    id: "CLI-005",
-    nom: "Thomas Moreau",
-    initiales: "TM",
-    email: "thomas.moreau@example.com",
-    telephone: "+225 07 89 01 23 45",
-    statut: "actif",
-    type: "Particulier",
-    dateInscription: "02/04/2025",
-  },
-  {
-    id: "CLI-006",
-    nom: "Société Beta",
-    initiales: "SB",
-    email: "contact@beta-societe.com",
-    telephone: "+225 05 67 89 01 23",
-    statut: "actif",
-    type: "Entreprise",
-    dateInscription: "10/04/2025",
-  },
-  {
-    id: "CLI-007",
-    nom: "Camille Petit",
-    initiales: "CP",
-    email: "camille.petit@example.com",
-    telephone: "+225 01 45 67 89 01",
-    statut: "inactif",
-    type: "Particulier",
-    dateInscription: "25/04/2025",
-  },
-]
+export interface Client {
+  id: string
+  prenom: string
+  nom: string
+  initiales: string
+  email: string
+  telephone: string
+  statut: "actif" | "inactif"
+  type: "Particulier" | "Entreprise"
+  dateInscription: string
+}
+
+function getInitials(nom: string, prenom: string): string {
+  const firstInitial = prenom ? prenom.charAt(0).toUpperCase() : ""
+  const lastInitial = nom ? nom.charAt(0).toUpperCase() : ""
+  return `${firstInitial}${lastInitial}`
+}
 
 export default function ClientsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [clients, setClients] = useState<Client[]>([])
 
-  // Filtrer les clients en fonction de la recherche
+  const [nom, setNom] = useState("")
+  const [prenom, setPrenom] = useState("")
+  const [email, setEmail] = useState("")
+  const [telephone, setTelephone] = useState("")
+  const [adresse, setAdresse] = useState("")
+  const [ville, setVille] = useState("")
+  const [pays, setPays] = useState("sn")
+  const [type, setType] = useState<"Particulier" | "Entreprise">("Particulier")
+  const [statut, setStatut] = useState<"actif" | "inactif">("actif")
+  const [dateInscription, setDateInscription] = useState<string>("")
+
+  useEffect(() => {
+    fetchClients()
+
+    const currentDate = new Date().toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })
+    setDateInscription(currentDate)
+  }, [])
+
+  const fetchClients = async () => {
+    try {
+      const response = await clientsAPI.getAll()
+      setClients(response.data)
+    } catch (error) {
+      console.error("Erreur lors du chargement des clients :", error)
+    }
+  }
+
   const filteredClients = clients.filter(
     (client) =>
       client.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.telephone.includes(searchTerm) ||
-      client.id.toLowerCase().includes(searchTerm.toLowerCase()),
+      client.id.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handleAddClient = (e: React.FormEvent) => {
+  const handleAddClient = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    // Simuler l'ajout d'un client
-    setTimeout(() => {
-      setLoading(false)
+    try {
+      await clientsAPI.create({
+        nom,
+        prenom,
+        email,
+        telephone,
+        adresse,
+        ville,
+        pays,
+        type,
+        statut,
+        dateInscription,
+      })
+
       setDialogOpen(false)
-    }, 1500)
+      fetchClients()
+    } catch (error) {
+      console.error("Erreur lors de l'ajout :", error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -134,6 +126,7 @@ export default function ClientsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Clients</h1>
           <p className="text-muted-foreground">Gérez vos clients et leurs informations.</p>
         </div>
+
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-blue-600 hover:bg-blue-700">
@@ -150,19 +143,19 @@ export default function ClientsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="type">Type de client</Label>
-                    <Select>
+                    <Select value={type} onValueChange={(value) => setType(value as "Particulier" | "Entreprise")}>
                       <SelectTrigger id="type">
                         <SelectValue placeholder="Sélectionnez un type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="particulier">Particulier</SelectItem>
-                        <SelectItem value="entreprise">Entreprise</SelectItem>
+                        <SelectItem value="Particulier">Particulier</SelectItem>
+                        <SelectItem value="Entreprise">Entreprise</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="statut">Statut</Label>
-                    <Select defaultValue="actif">
+                    <Select value={statut} onValueChange={(value) => setStatut(value as "actif" | "inactif")}>
                       <SelectTrigger id="statut">
                         <SelectValue placeholder="Sélectionnez un statut" />
                       </SelectTrigger>
@@ -177,37 +170,37 @@ export default function ClientsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="prenom">Prénom</Label>
-                    <Input id="prenom" placeholder="Prénom" />
+                    <Input id="prenom" value={prenom} onChange={(e) => setPrenom(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="nom">Nom</Label>
-                    <Input id="nom" placeholder="Nom" />
+                    <Input id="nom" value={nom} onChange={(e) => setNom(e.target.value)} />
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="exemple@email.com" />
+                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="telephone">Téléphone</Label>
-                  <Input id="telephone" placeholder="+225 XX XX XX XX XX" />
+                  <Input id="telephone" value={telephone} onChange={(e) => setTelephone(e.target.value)} />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="adresse">Adresse</Label>
-                  <Input id="adresse" placeholder="Adresse complète" />
+                  <Input id="adresse" value={adresse} onChange={(e) => setAdresse(e.target.value)} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="ville">Ville</Label>
-                    <Input id="ville" placeholder="Ville" />
+                    <Input id="ville" value={ville} onChange={(e) => setVille(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="pays">Pays</Label>
-                    <Select defaultValue="ci">
+                    <Select value={pays} onValueChange={setPays}>
                       <SelectTrigger id="pays">
                         <SelectValue placeholder="Sélectionnez un pays" />
                       </SelectTrigger>
@@ -264,15 +257,17 @@ export default function ClientsPage() {
           </TableHeader>
           <TableBody>
             {filteredClients.length > 0 ? (
-              filteredClients.map((client) => (
-                <TableRow key={client.id}>
+              filteredClients.map((client, index) => (
+                <TableRow key={client.id || `${client.nom}-${client.email}-${index}`}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
-                        <AvatarFallback className="bg-blue-100 text-blue-600">{client.initiales}</AvatarFallback>
+                        <AvatarFallback className="bg-blue-100 text-blue-600">
+                          {getInitials(client.nom, client.prenom)}
+                        </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium">{client.nom}</div>
+                        <div className="font-medium">{client.prenom} {client.nom}</div>
                         <div className="text-sm text-muted-foreground">{client.id}</div>
                       </div>
                     </div>
@@ -298,7 +293,6 @@ export default function ClientsPage() {
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
                           <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Menu</span>
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">

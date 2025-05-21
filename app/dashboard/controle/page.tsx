@@ -104,21 +104,6 @@ export default function ControlePage() {
                   />
                 </div>
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label>Température actuelle</Label>
-                      <span className="text-sm font-medium">{temperature.refrigerator}°C</span>
-                    </div>
-                    <Slider
-                      value={[temperature.refrigerator]}
-                      min={1}
-                      max={8}
-                      step={1}
-                      disabled={!deviceStatus.refrigerator}
-                      onValueChange={(value) => setTemperature({ ...temperature, refrigerator: value[0] })}
-                      className={deviceStatus.refrigerator ? "bg-blue-100" : ""}
-                    />
-                  </div>
                   <div className="flex items-center justify-between">
                     <Label>ID de l'appareil</Label>
                     <span className="text-sm">REF-001</span>
