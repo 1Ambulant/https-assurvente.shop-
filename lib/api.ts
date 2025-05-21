@@ -61,14 +61,16 @@ export const produitsAPI = {
 export const commandesAPI = {
   getAll: () => api.get("/commandes"),
   create: (data: {
+    _id?: string;
     produitId: string;
     clientId: string;
     quantite: number;
     montantTotal: number;
-    paiementEchelonne: boolean;
-    nombreEcheances: number;
-    acompteInitial: number;
-    statut: string;
+    paiementEchelonne?: boolean;
+    nombreEcheances?: number;
+    acompteInitial?: number;
+    statut: "preparation" | "expediee" | "livree" | "annulee";
+    paiement: "attente" | "paye" | "rembourse";
     dateCommande: string;
   }) => api.post("/commandes", data),
 };
