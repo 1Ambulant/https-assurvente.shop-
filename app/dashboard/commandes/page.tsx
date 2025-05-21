@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -28,97 +26,110 @@ import { Filter, MoreHorizontal, Search, ShoppingBag } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { commandesAPI, produitsAPI, clientsAPI } from "@/lib/api"
 
-const commandes = [
-  {
-    id: "CMD-001",
-    client: "Martin Dubois",
-    produits: "Réfrigérateur Samsung Side by Side",
-    montant: "450,000 XOF",
-    date: "15/05/2025",
-    statut: "en préparation",
-    paiement: "payé",
-  },
-  {
-    id: "CMD-002",
-    client: "Entreprise Alpha",
-    produits: "Climatiseur Daikin Inverter (x2)",
-    montant: "550,000 XOF",
-    date: "14/05/2025",
-    statut: "expédiée",
-    paiement: "payé",
-  },
-  {
-    id: "CMD-003",
-    client: "Sophie Lefebvre",
-    produits: "Machine à laver LG 8kg",
-    montant: "325,000 XOF",
-    date: "12/05/2025",
-    statut: "livrée",
-    paiement: "payé",
-  },
-  {
-    id: "CMD-004",
-    client: "Groupe Gamma",
-    produits: "Lave-vaisselle Whirlpool, Micro-ondes Panasonic",
-    montant: "470,000 XOF",
-    date: "10/05/2025",
-    statut: "en préparation",
-    paiement: "en attente",
-  },
-  {
-    id: "CMD-005",
-    client: "Thomas Moreau",
-    produits: "Cuisinière à gaz Bosch 4 feux",
-    montant: "185,000 XOF",
-    date: "08/05/2025",
-    statut: "annulée",
-    paiement: "remboursé",
-  },
-  {
-    id: "CMD-006",
-    client: "Société Beta",
-    produits: "Four électrique Moulinex (x3)",
-    montant: "375,000 XOF",
-    date: "05/05/2025",
-    statut: "livrée",
-    paiement: "payé",
-  },
-  {
-    id: "CMD-007",
-    client: "Camille Petit",
-    produits: "Micro-ondes Panasonic",
-    montant: "95,000 XOF",
-    date: "03/05/2025",
-    statut: "expédiée",
-    paiement: "payé",
-  },
-]
+interface Client {
+  _id: string
+  nom: string
+  prenom: string
+}
+
+interface Produit {
+  _id: string
+  nom: string
+  prix: number
+}
+
+export interface Commande {
+  _id?: string
+  clientId: string
+  produitId: string
+  quantite: number
+  montantTotal: number
+  paiement: "attente" | "paye" | "rembourse"
+  statut: "preparation" | "expediee" | "livree" | "annulee"
+  dateCommande: string
+  paiementEchelonne?: boolean
+  nombreEcheances?: number
+  acompteInitial?: number
+}
+
 
 export default function CommandesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  // Filtrer les commandes en fonction de la recherche
-  const filteredCommandes = commandes.filter(
-    (commande) =>
-      commande.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      commande.produits.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      commande.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      commande.statut.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  const [clients, setClients] = useState<Client[]>([])
+  const [produits, setProduits] = useState<Produit[]>([])
+  const [commandes, setCommandes] = useState<Commande[]>([])
 
-  const handleAddCommande = (e: React.FormEvent) => {
+  const [clientId, setClientId] = useState("")
+  const [produitId, setProduitId] = useState("")
+  const [quantite, setQuantite] = useState(1)
+  const [paiement, setPaiement] = useState<Commande["paiement"]>("attente")
+  const [statut, setStatut] = useState<Commande["statut"]>("preparation")
+  const [paiementEchelonne, setPaiementEchelonne] = useState(false)
+  const [nombreEcheances, setNombreEcheances] = useState(1)
+
+
+  useEffect(() => {
+    const fetchAll = async () => {
+      const [cmdRes, prodRes, clientRes] = await Promise.all([
+        commandesAPI.getAll(),
+        produitsAPI.getAll(),
+        clientsAPI.getAll(),
+      ])
+      setCommandes(cmdRes.data)
+      setProduits(prodRes.data)
+      setClients(clientRes.data)
+    }
+    fetchAll()
+  }, [])
+
+  const handleAddCommande = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
 
-    // Simuler l'ajout d'une commande
-    setTimeout(() => {
-      setLoading(false)
+    const produit = produits.find(p => p._id === produitId)
+    if (!produit) return
+
+    let montant = produit.prix * quantite;
+
+    // Si paiement échelonné, appliquer une majoration (par exemple 5% par mois)
+    if (paiementEchelonne && nombreEcheances > 1) {
+      const tauxMajoration = 0.05
+      montant *= 1 + tauxMajoration * nombreEcheances
+    }
+
+    const nouvelleCommande: Omit<Commande, "_id"> & {
+      paiementEchelonne: boolean
+      nombreEcheances?: number
+    } = {
+      clientId,
+      produitId,
+      quantite,
+      montantTotal: Math.round(montant),
+      paiement,
+      statut,
+      dateCommande: new Date().toISOString(),
+      paiementEchelonne,
+      ...(paiementEchelonne ? { nombreEcheances } : {}),
+    }
+
+    try {
+      const res = await commandesAPI.create(nouvelleCommande)
+      setCommandes(prev => [...prev, res.data])
       setDialogOpen(false)
-    }, 1500)
+    } catch (err) {
+      console.error("Erreur:", err)
+    } finally {
+      setLoading(false)
+    }
   }
+
+  const filteredCommandes = commandes.filter(c =>
+    c.clientId.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   return (
     <div className="space-y-6">
@@ -136,78 +147,57 @@ export default function CommandesPage() {
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Ajouter une nouvelle commande</DialogTitle>
-              <DialogDescription>Remplissez les informations pour créer une nouvelle commande.</DialogDescription>
+              <DialogDescription>Remplissez les informations nécessaires.</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleAddCommande}>
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="client">Client</Label>
-                  <Select>
-                    <SelectTrigger id="client">
-                      <SelectValue placeholder="Sélectionnez un client" />
-                    </SelectTrigger>
+                  <Label>Client</Label>
+                  <Select onValueChange={setClientId}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionnez un client" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="martin">Martin Dubois</SelectItem>
-                      <SelectItem value="sophie">Sophie Lefebvre</SelectItem>
-                      <SelectItem value="thomas">Thomas Moreau</SelectItem>
-                      <SelectItem value="camille">Camille Petit</SelectItem>
-                      <SelectItem value="alpha">Entreprise Alpha</SelectItem>
-                      <SelectItem value="beta">Société Beta</SelectItem>
-                      <SelectItem value="gamma">Groupe Gamma</SelectItem>
+                      {clients.map(client => (
+                        <SelectItem key={client._id} value={client._id}>{client.prenom} {client.nom}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="produits">Produits</Label>
-                  <Select>
-                    <SelectTrigger id="produits">
-                      <SelectValue placeholder="Sélectionnez un produit" />
-                    </SelectTrigger>
+                  <Label>Produit</Label>
+                  <Select onValueChange={setProduitId}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionnez un produit" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="refrigerateur">Réfrigérateur Samsung Side by Side</SelectItem>
-                      <SelectItem value="machine">Machine à laver LG 8kg</SelectItem>
-                      <SelectItem value="climatiseur">Climatiseur Daikin Inverter</SelectItem>
-                      <SelectItem value="cuisiniere">Cuisinière à gaz Bosch 4 feux</SelectItem>
-                      <SelectItem value="micro-ondes">Micro-ondes Panasonic</SelectItem>
-                      <SelectItem value="lave-vaisselle">Lave-vaisselle Whirlpool</SelectItem>
-                      <SelectItem value="four">Four électrique Moulinex</SelectItem>
+                      {produits.map(produit => (
+                        <SelectItem key={produit._id} value={produit._id}>{produit.nom}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="quantite">Quantité</Label>
-                    <Input id="quantite" type="number" min="1" defaultValue="1" />
+                    <Label>Quantité</Label>
+                    <Input type="number" value={quantite} min="1" onChange={e => setQuantite(+e.target.value)} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="prix">Prix unitaire (XOF)</Label>
-                    <Input id="prix" type="number" placeholder="Ex: 450000" />
+                    <Label>Statut</Label>
+                    <Select defaultValue="preparation" onValueChange={v => setStatut(v as Commande["statut"])}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="preparation">Préparation</SelectItem>
+                        <SelectItem value="expediee">Expédiée</SelectItem>
+                        <SelectItem value="livree">Livrée</SelectItem>
+                        <SelectItem value="annulee">Annulée</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="statut">Statut de la commande</Label>
-                  <Select defaultValue="preparation">
-                    <SelectTrigger id="statut">
-                      <SelectValue placeholder="Sélectionnez un statut" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="preparation">En préparation</SelectItem>
-                      <SelectItem value="expedie">Expédiée</SelectItem>
-                      <SelectItem value="livree">Livrée</SelectItem>
-                      <SelectItem value="annulee">Annulée</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="paiement">Statut du paiement</Label>
-                  <Select defaultValue="attente">
-                    <SelectTrigger id="paiement">
-                      <SelectValue placeholder="Sélectionnez un statut" />
-                    </SelectTrigger>
+                  <Label>Paiement</Label>
+                  <Select defaultValue="attente" onValueChange={v => setPaiement(v as Commande["paiement"])}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="attente">En attente</SelectItem>
                       <SelectItem value="paye">Payé</SelectItem>
@@ -215,17 +205,36 @@ export default function CommandesPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea id="notes" placeholder="Notes supplémentaires..." />
-                </div>
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                  Annuler
-                </Button>
-                <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={loading}>
+              <div className="space-y-2">
+                <Label>Paiement échelonné ?</Label>
+                <Select onValueChange={(v) => setPaiementEchelonne(v === "oui")}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisissez une option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="non">Non</SelectItem>
+                    <SelectItem value="oui">Oui</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {paiementEchelonne && (
+                <div className="space-y-4">
+                  <Label>Nombre d'échéances</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={12}
+                    value={nombreEcheances}
+                    onChange={(e) => setNombreEcheances(+e.target.value)}
+                  />
+                </div>
+              )}
+
+              <DialogFooter >
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
+                <Button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700">
                   {loading ? "Enregistrement..." : "Enregistrer"}
                 </Button>
               </DialogFooter>
@@ -234,9 +243,9 @@ export default function CommandesPage() {
         </Dialog>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+      <div className="flex justify-between items-center gap-4">
         <div className="relative w-full md:w-96">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Rechercher une commande..."
             className="pl-10"
@@ -255,84 +264,58 @@ export default function CommandesPage() {
             <TableRow>
               <TableHead>ID</TableHead>
               <TableHead>Client</TableHead>
-              <TableHead>Produits</TableHead>
+              <TableHead>Produit</TableHead>
               <TableHead>Montant</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead>Paiement</TableHead>
+              <TableHead>Paiement échelonné</TableHead>
+              <TableHead>Échéances</TableHead>
+
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredCommandes.length > 0 ? (
-              filteredCommandes.map((commande) => (
-                <TableRow key={commande.id}>
-                  <TableCell className="font-medium">{commande.id}</TableCell>
-                  <TableCell>{commande.client}</TableCell>
-                  <TableCell>{commande.produits}</TableCell>
-                  <TableCell>{commande.montant}</TableCell>
-                  <TableCell>{commande.date}</TableCell>
-                  <TableCell>
-                    <Badge
-                      className={
-                        commande.statut === "livrée"
-                          ? "bg-green-500"
-                          : commande.statut === "expédiée"
-                            ? "bg-blue-500"
-                            : commande.statut === "en préparation"
-                              ? "bg-yellow-500 text-yellow-800"
-                              : "bg-red-500"
-                      }
-                    >
-                      {commande.statut}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={
-                        commande.paiement === "payé"
-                          ? "border-green-500 text-green-600 bg-green-50"
-                          : commande.paiement === "en attente"
-                            ? "border-yellow-500 text-yellow-600 bg-yellow-50"
-                            : "border-red-500 text-red-600 bg-red-50"
-                      }
-                    >
-                      {commande.paiement}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>Voir les détails</DropdownMenuItem>
-                        <DropdownMenuItem>Modifier</DropdownMenuItem>
-                        <DropdownMenuItem>Générer une facture</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-500">Annuler</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
-                  <div className="flex flex-col items-center justify-center">
-                    <Search className="h-8 w-8 text-gray-400 mb-2" />
-                    <h3 className="text-lg font-medium">Aucune commande trouvée</h3>
-                    <p className="text-sm text-gray-500">Essayez de modifier vos critères de recherche.</p>
-                  </div>
+            {filteredCommandes.map((commande) => (
+              <TableRow key={commande._id}>
+                <TableCell>{commande._id}</TableCell>
+                <TableCell>
+                  {clients.find(c => c._id === commande.clientId)
+                    ? `${clients.find(c => c._id === commande.clientId)?.prenom} ${clients.find(c => c._id === commande.clientId)?.nom}`
+                    : "?"}
+                </TableCell>
+                <TableCell>{produits.find(p => p._id === commande.produitId)?.nom || "?"}</TableCell>
+                <TableCell>{commande.montantTotal} XOF</TableCell>
+                <TableCell>{new Date(commande.dateCommande).toLocaleDateString()}</TableCell>
+                <TableCell><Badge>{commande.statut}</Badge></TableCell>
+                <TableCell><Badge>{commande.paiement}</Badge></TableCell>
+                <TableCell>
+                  {commande.paiementEchelonne ? (
+                    <Badge className="bg-yellow-500 text-white">Oui</Badge>
+                  ) : (
+                    <Badge className="bg-gray-300 text-black">Non</Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {commande.paiementEchelonne ? commande.nombreEcheances : "-"}
+                </TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem>Voir</DropdownMenuItem>
+                      <DropdownMenuItem>Modifier</DropdownMenuItem>
+                      <DropdownMenuItem className="text-red-500">Supprimer</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
-            )}
+            ))}
           </TableBody>
         </Table>
       </div>
