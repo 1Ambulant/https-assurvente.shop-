@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent } from "@/components/ui/card"
+import { authAPI } from "@/lib/api"
 
 export default function ConnexionPage() {
   const router = useRouter()
@@ -28,32 +29,29 @@ export default function ConnexionPage() {
     const motDePasse = (document.getElementById("password") as HTMLInputElement).value;
   
     try {
-      const res = await fetch("/api/users/login?api_key=super-cle-api-123456", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ email, motDePasse })
-      });
-  
-      const data = await res.json();
-  
-      if (!res.ok) {
-        throw new Error(data.error || "Erreur de connexion");
+      const response = await authAPI.login({ email, motDePasse });
+    
+      const data = response.data;
+    
+      // ✅ Vérifie si un token est bien renvoyé
+      if (!data?.token) {
+        throw new Error("Token non fourni par le serveur.");
       }
-
-      console.log("Connexion réussie", data);
-  
-      // ✅ Stocker le token dans localStorage
+    
+      // ✅ Stocke le token dans localStorage
       localStorage.setItem("token", data.token);
-  
-      // ✅ Rediriger
+    
+      console.log("Connexion réussie ✅", data);
+    
+      // ✅ Redirige vers le dashboard
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message);
+      console.error("Erreur de connexion :", err);
+      setError(err.message || "Erreur inconnue");
     } finally {
       setLoading(false);
     }
+    
   };
   
 
