@@ -30,7 +30,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { clientsAPI } from "@/lib/api"
 
 export interface Client {
-  id: string
+  _id: string
   prenom: string
   nom: string
   initiales: string
@@ -78,23 +78,29 @@ export default function ClientsPage() {
   const fetchClients = async () => {
     try {
       const response = await clientsAPI.getAll()
+      console.log("Clients récupérés :", response.data)
       setClients(response.data)
     } catch (error) {
       console.error("Erreur lors du chargement des clients :", error)
     }
   }
 
-  const filteredClients = clients.filter(
-    (client) =>
-      client.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.telephone.includes(searchTerm) ||
-      client.id.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
   const handleAddClient = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+
+    console.log("Ajout d'un client :", {
+      nom,
+      prenom,
+      email,
+      telephone,
+      adresse,
+      ville,
+      pays,
+      type,
+      statut,
+      dateInscription,
+    })
 
     try {
       await clientsAPI.create({
@@ -118,6 +124,25 @@ export default function ClientsPage() {
       setLoading(false)
     }
   }
+
+  const handleDeleteClient = async (id: string) => {
+    if (!confirm("Confirmer la suppression de ce client ?")) return;
+
+    try {
+      const res = await fetch(`/api/clients/${id}`, { method: "DELETE" });
+
+      if (res.ok) {
+        setClients(clients.filter((c) => c._id !== id));
+      } else {
+        const err = await res.json();
+        alert(err.error || "Erreur lors de la suppression");
+      }
+    } catch (err) {
+      console.error("Erreur suppression :", err);
+      alert("Erreur serveur");
+    }
+  };
+
 
   return (
     <div className="space-y-6">
@@ -256,9 +281,9 @@ export default function ClientsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredClients.length > 0 ? (
-              filteredClients.map((client, index) => (
-                <TableRow key={client.id || `${client.nom}-${client.email}-${index}`}>
+            {clients.length > 0 ? (
+              clients.map((client, index) => (
+                <TableRow key={client._id || `${client.nom}-${client.email}-${index}`}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
@@ -268,7 +293,6 @@ export default function ClientsPage() {
                       </Avatar>
                       <div>
                         <div className="font-medium">{client.prenom} {client.nom}</div>
-                        <div className="text-sm text-muted-foreground">{client.id}</div>
                       </div>
                     </div>
                   </TableCell>
@@ -302,7 +326,12 @@ export default function ClientsPage() {
                         <DropdownMenuItem>Modifier</DropdownMenuItem>
                         <DropdownMenuItem>Contacter</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-500">Désactiver</DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteClient(client._id)}
+                          className="text-red-500"
+                        >
+                          Supprimer
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
