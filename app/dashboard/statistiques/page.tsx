@@ -45,7 +45,6 @@ export default function StatistiquesPage() {
           <TabsTrigger value="ventes">Ventes</TabsTrigger>
           <TabsTrigger value="clients">Clients</TabsTrigger>
           <TabsTrigger value="produits">Produits</TabsTrigger>
-          <TabsTrigger value="agents">Agents</TabsTrigger>
         </TabsList>
 
         <TabsContent value="ventes" className="space-y-4">
@@ -77,16 +76,6 @@ export default function StatistiquesPage() {
               <CardContent>
                 <div className="text-2xl font-bold">245,000 XOF</div>
                 <p className="text-xs text-muted-foreground">+5% par rapport à l'année précédente</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Taux de conversion</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">24.3%</div>
-                <p className="text-xs text-muted-foreground">+5.1% par rapport à l'année précédente</p>
               </CardContent>
             </Card>
           </div>
@@ -138,38 +127,6 @@ export default function StatistiquesPage() {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Ventes par catégorie</CardTitle>
-                <CardDescription>Répartition des ventes par catégorie de produit</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={350}>
-                  <BarChart
-                    data={[
-                      { name: "Auto", total: 4500000 },
-                      { name: "Habitation", total: 3200000 },
-                      { name: "Santé", total: 2800000 },
-                      { name: "Vie", total: 2200000 },
-                      { name: "Voyage", total: 1500000 },
-                      { name: "Professionnel", total: 3800000 },
-                    ]}
-                  >
-                    <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis
-                      stroke="#888888"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={formatMontant}
-                    />
-                    <Tooltip />
-                    <Bar dataKey="total" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
           </div>
         </TabsContent>
 
@@ -195,25 +152,6 @@ export default function StatistiquesPage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Taux de fidélisation</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">78.5%</div>
-                <p className="text-xs text-muted-foreground">+3.2% par rapport à l'année précédente</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Valeur client moyenne</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">450,000 XOF</div>
-                <p className="text-xs text-muted-foreground">+12% par rapport à l'année précédente</p>
-              </CardContent>
-            </Card>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -245,34 +183,6 @@ export default function StatistiquesPage() {
                     <Tooltip />
                     <Bar dataKey="total" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
                   </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Répartition des clients</CardTitle>
-                <CardDescription>Par type de client</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={350}>
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { name: "Particuliers", value: 65, fill: "#0ea5e9" },
-                        { name: "Entreprises", value: 25, fill: "#f59e0b" },
-                        { name: "Associations", value: 10, fill: "#10b981" },
-                      ]}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    />
-                    <Tooltip />
-                  </PieChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
@@ -328,72 +238,6 @@ export default function StatistiquesPage() {
                     <YAxis dataKey="name" type="category" stroke="#888888" fontSize={12} width={150} />
                     <Tooltip />
                     <Bar dataKey="total" fill="#0ea5e9" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="agents" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Performance des agents</CardTitle>
-                <CardDescription>Ventes par agent commercial</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={350}>
-                  <BarChart
-                    data={[
-                      { name: "Jean Kouassi", total: 3500000 },
-                      { name: "Marie Konan", total: 2800000 },
-                      { name: "Amina Diallo", total: 3200000 },
-                      { name: "Paul Ouattara", total: 2500000 },
-                      { name: "Sophie Koffi", total: 1800000 },
-                    ]}
-                  >
-                    <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis
-                      stroke="#888888"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={formatMontant}
-                    />
-                    <Tooltip />
-                    <Bar dataKey="total" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Taux de conversion par agent</CardTitle>
-                <CardDescription>Efficacité des agents commerciaux</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={350}>
-                  <BarChart
-                    data={[
-                      { name: "Jean Kouassi", total: 28 },
-                      { name: "Marie Konan", total: 32 },
-                      { name: "Amina Diallo", total: 25 },
-                      { name: "Paul Ouattara", total: 22 },
-                      { name: "Sophie Koffi", total: 18 },
-                    ]}
-                  >
-                    <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis
-                      stroke="#888888"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(value) => `${value}%`}
-                    />
-                    <Tooltip />
-                    <Bar dataKey="total" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>

@@ -39,10 +39,10 @@ export default function ParametresPage() {
             <Lock className="mr-2 h-4 w-4" />
             Sécurité
           </TabsTrigger>
-          <TabsTrigger value="notifications">
+          {/* <TabsTrigger value="notifications">
             <Bell className="mr-2 h-4 w-4" />
             Notifications
-          </TabsTrigger>
+          </TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="profil" className="space-y-4">
@@ -131,7 +131,7 @@ export default function ParametresPage() {
             </CardFooter>
           </Card>
 
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle>Authentification à deux facteurs</CardTitle>
               <CardDescription>Ajoutez une couche de sécurité supplémentaire à votre compte.</CardDescription>
@@ -152,10 +152,10 @@ export default function ParametresPage() {
                 <Switch defaultChecked />
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </TabsContent>
 
-        <TabsContent value="notifications" className="space-y-4">
+        {/* <TabsContent value="notifications" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Préférences de notification</CardTitle>
@@ -204,7 +204,7 @@ export default function ParametresPage() {
               </Button>
             </CardFooter>
           </Card>
-        </TabsContent>
+        </TabsContent> */}
       </Tabs>
     </div>
   )
