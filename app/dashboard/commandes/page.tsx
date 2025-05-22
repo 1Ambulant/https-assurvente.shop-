@@ -114,7 +114,7 @@ export default function CommandesPage() {
       montantTotal: Math.round(montant),
       paiement,
       statut,
-      dateCommande: new Date().toISOString(),
+      dateCommande: new Date().toLocaleDateString("fr-FR"),
       paiementEchelonne,
       ...(paiementEchelonne ? { nombreEcheances } : {}),
       commande: `${client.prenom} ${client.nom} - ${produit.nom}`,
