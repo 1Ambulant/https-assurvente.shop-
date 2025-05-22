@@ -53,19 +53,14 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
       icon: Users,
     },
     {
-      title: "Commandes",
-      href: "/dashboard/commandes",
+      title: "Ventes",
+      href: "/dashboard/ventes",
       icon: ShoppingBag,
     },
     {
       title: "Paiements",
       href: "/dashboard/paiements",
       icon: CreditCard,
-    },
-    {
-      title: "Livraisons",
-      href: "/dashboard/livraisons",
-      icon: Truck,
     },
     {
       title: "Partenaires",

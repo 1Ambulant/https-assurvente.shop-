@@ -108,7 +108,7 @@ export default function PartenairesPage() {
               <Plus className="mr-2 h-4 w-4" /> Ajouter un partenaire
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Ajouter un nouveau partenaire</DialogTitle>
               <DialogDescription>Remplissez les informations ci-dessous.</DialogDescription>
