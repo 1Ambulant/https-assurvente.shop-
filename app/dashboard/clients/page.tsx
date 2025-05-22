@@ -158,7 +158,7 @@ export default function ClientsPage() {
               <UserPlus className="mr-2 h-4 w-4" /> Ajouter un client
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Ajouter un nouveau client</DialogTitle>
               <DialogDescription>Remplissez les informations pour créer un nouveau client.</DialogDescription>
