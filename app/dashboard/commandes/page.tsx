@@ -132,9 +132,7 @@ export default function CommandesPage() {
   }
   
 
-  const filteredCommandes = commandes.filter(c =>
-    c.clientId.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredCommandes = commandes;
 
   return (
     <div className="space-y-6">
