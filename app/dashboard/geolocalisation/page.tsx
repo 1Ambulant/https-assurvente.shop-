@@ -222,10 +222,6 @@ export default function GeolocalisationPage() {
         }}
       >
         <TabsList>
-          <TabsTrigger value="clients">
-            <User className="mr-2 h-4 w-4" />
-            Clients
-          </TabsTrigger>
           <TabsTrigger value="livreurs">
             <Truck className="mr-2 h-4 w-4" />
             Livreurs

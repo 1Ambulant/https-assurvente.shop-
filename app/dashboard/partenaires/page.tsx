@@ -127,14 +127,9 @@ export default function PartenairesPage() {
                         <SelectValue placeholder="Sélectionnez un type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="assureur">Assureur</SelectItem>
-                        <SelectItem value="banque">Banque</SelectItem>
                         <SelectItem value="automobile">Automobile</SelectItem>
                         <SelectItem value="sante">Santé</SelectItem>
-                        <SelectItem value="immobilier">Immobilier</SelectItem>
-                        <SelectItem value="voyage">Voyage</SelectItem>
-                        <SelectItem value="technologie">Technologie</SelectItem>
-                        <SelectItem value="education">Éducation</SelectItem>
+                        <SelectItem value="boutique">Boutique</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
