@@ -132,7 +132,7 @@ export default function CommandesPage() {
   }
   
 
-  const filteredCommandes = commandes;
+  const filteredCommandes = commandes
 
   return (
     <div className="space-y-6">
@@ -147,7 +147,7 @@ export default function CommandesPage() {
               <ShoppingBag className="mr-2 h-4 w-4" /> Ajouter une commande
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Ajouter une nouvelle commande</DialogTitle>
               <DialogDescription>Remplissez les informations nécessaires.</DialogDescription>
