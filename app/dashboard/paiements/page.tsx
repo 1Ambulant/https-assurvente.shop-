@@ -156,13 +156,7 @@ export default function PaiementsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="date">Date du paiement</Label>
-                  <Input id="date" type="date" value={date} readOnly />
-                </div>
-
-
+                
                 <div className="space-y-2">
                   <Label htmlFor="statut">Statut</Label>
                   <Select value={statut} onValueChange={setStatut}>

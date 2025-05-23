@@ -11,6 +11,7 @@ import {
 import { VentesRecentes } from "@/components/dashboard/ventes-recentes"
 import { CommandesRecentes } from "@/components/dashboard/commandes-recentes"
 import { produitsAPI, clientsAPI, ventesAPI, partenariatsAPI, commandesAPI } from "@/lib/api"
+import { useRouter } from "next/navigation"
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -21,7 +22,17 @@ export default function DashboardPage() {
     commandePassee: 0,
   })
 
+  const router = useRouter();
+
   useEffect(() => {
+
+     // 🔁 Vérification du rôle dans le localStorage
+     const role = localStorage.getItem("role")
+     if (role === "client") {
+       router.push("/dashboard/produits")
+       return
+     }
+
     const fetchDashboardStats = async () => {
 
       try {
