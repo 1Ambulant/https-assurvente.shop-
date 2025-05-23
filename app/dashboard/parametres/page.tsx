@@ -1,25 +1,70 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Bell, Lock, User } from "lucide-react"
+import { Lock, User } from "lucide-react"
 
 export default function ParametresPage() {
   const [loading, setLoading] = useState(false)
+  const [profil, setProfil] = useState({ prenom: "", nom: "", email: "", telephone: "", bio: "" })
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
 
-  const handleSave = () => {
+  useEffect(() => {
+    const loadProfil = async () => {
+      console.log("Chargement du profil...")
+      const role = localStorage.getItem("role")
+      const id = localStorage.getItem("id")
+      if (!role || !id) return
+
+      const res = await fetch(`/api/profil/${role}/${id}`)
+      const data = await res.json()
+      console.log("Profil chargé :", data)
+      setProfil(data)
+    }
+
+    loadProfil()
+  }, [])
+
+  const handleProfilUpdate = async () => {
     setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-    }, 1000)
+    const role = localStorage.getItem("role")
+    const id = localStorage.getItem("id")
+    await fetch(`/api/profil/${role}/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(profil),
+    })
+    setLoading(false)
+    alert("Profil mis à jour")
+  }
+
+  const handlePasswordChange = async () => {
+    if (newPassword !== confirmPassword) return alert("Les mots de passe ne correspondent pas")
+    setLoading(true)
+    const role = localStorage.getItem("role")
+    const id = localStorage.getItem("id")
+    const res = await fetch(`/api/profil/${role}/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    })
+    setLoading(false)
+    if (res.ok) {
+      alert("Mot de passe mis à jour")
+      setCurrentPassword("")
+      setNewPassword("")
+      setConfirmPassword("")
+    } else {
+      alert("Erreur : mot de passe actuel incorrect")
+    }
   }
 
   return (
@@ -30,7 +75,7 @@ export default function ParametresPage() {
       </div>
 
       <Tabs defaultValue="profil">
-        <TabsList className="grid w-full grid-cols-3 md:w-auto md:inline-flex">
+        <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex">
           <TabsTrigger value="profil">
             <User className="mr-2 h-4 w-4" />
             Profil
@@ -39,10 +84,6 @@ export default function ParametresPage() {
             <Lock className="mr-2 h-4 w-4" />
             Sécurité
           </TabsTrigger>
-          {/* <TabsTrigger value="notifications">
-            <Bell className="mr-2 h-4 w-4" />
-            Notifications
-          </TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="profil" className="space-y-4">
@@ -58,9 +99,7 @@ export default function ParametresPage() {
                   <AvatarFallback>JD</AvatarFallback>
                 </Avatar>
                 <div className="space-y-2">
-                  <Button variant="outline" size="sm">
-                    Changer la photo
-                  </Button>
+                  <Button variant="outline" size="sm">Changer la photo</Button>
                   <p className="text-sm text-muted-foreground">JPG, GIF ou PNG. 1MB maximum.</p>
                 </div>
               </div>
@@ -68,36 +107,28 @@ export default function ParametresPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="prenom">Prénom</Label>
-                  <Input id="prenom" defaultValue="Jean" />
+                  <Input id="prenom" value={profil.prenom} onChange={(e) => setProfil({ ...profil, prenom: e.target.value })} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="nom">Nom</Label>
-                  <Input id="nom" defaultValue="Dupont" />
+                  <Input id="nom" value={profil.nom} onChange={(e) => setProfil({ ...profil, nom: e.target.value })} />
                 </div>
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue="jean.dupont@example.com" />
+                <Input id="email" type="email" value={profil.email} onChange={(e) => setProfil({ ...profil, email: e.target.value })} />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="telephone">Téléphone</Label>
-                <Input id="telephone" defaultValue="+225 01 23 45 67 89" />
+                <Input id="telephone" value={profil.telephone} onChange={(e) => setProfil({ ...profil, telephone: e.target.value })} />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
-                  placeholder="Parlez-nous de vous..."
-                  className="min-h-[100px]"
-                  defaultValue="Agent commercial chez AssurVente depuis 2023."
-                />
+                <Textarea id="bio" value={profil.bio} onChange={(e) => setProfil({ ...profil, bio: e.target.value })} />
               </div>
             </CardContent>
             <CardFooter className="flex justify-end">
-              <Button onClick={handleSave} disabled={loading}>
+              <Button onClick={handleProfilUpdate} disabled={loading}>
                 {loading ? "Enregistrement..." : "Enregistrer les modifications"}
               </Button>
             </CardFooter>
@@ -113,98 +144,24 @@ export default function ParametresPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="current-password">Mot de passe actuel</Label>
-                <Input id="current-password" type="password" />
+                <Input id="current-password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="new-password">Nouveau mot de passe</Label>
-                <Input id="new-password" type="password" />
+                <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirm-password">Confirmer le mot de passe</Label>
-                <Input id="confirm-password" type="password" />
+                <Input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
               </div>
             </CardContent>
             <CardFooter className="flex justify-end">
-              <Button onClick={handleSave} disabled={loading}>
+              <Button onClick={handlePasswordChange} disabled={loading}>
                 {loading ? "Mise à jour..." : "Mettre à jour le mot de passe"}
               </Button>
             </CardFooter>
           </Card>
-
-          {/* <Card>
-            <CardHeader>
-              <CardTitle>Authentification à deux facteurs</CardTitle>
-              <CardDescription>Ajoutez une couche de sécurité supplémentaire à votre compte.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Authentification par SMS</Label>
-                  <p className="text-sm text-muted-foreground">Recevez un code par SMS lors de la connexion.</p>
-                </div>
-                <Switch />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Authentification par application</Label>
-                  <p className="text-sm text-muted-foreground">Utilisez une application d'authentification.</p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-            </CardContent>
-          </Card> */}
         </TabsContent>
-
-        {/* <TabsContent value="notifications" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Préférences de notification</CardTitle>
-              <CardDescription>Choisissez comment vous souhaitez être notifié.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Notifications par email</Label>
-                  <p className="text-sm text-muted-foreground">Recevez des notifications par email.</p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Notifications par SMS</Label>
-                  <p className="text-sm text-muted-foreground">Recevez des notifications par SMS.</p>
-                </div>
-                <Switch />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Notifications dans l'application</Label>
-                  <p className="text-sm text-muted-foreground">Recevez des notifications dans l'application.</p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-
-              <div className="space-y-2 pt-4">
-                <Label htmlFor="frequency">Fréquence des notifications</Label>
-                <Select defaultValue="immediate">
-                  <SelectTrigger id="frequency">
-                    <SelectValue placeholder="Sélectionnez une fréquence" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="immediate">Immédiate</SelectItem>
-                    <SelectItem value="daily">Quotidienne</SelectItem>
-                    <SelectItem value="weekly">Hebdomadaire</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-end">
-              <Button onClick={handleSave} disabled={loading}>
-                {loading ? "Enregistrement..." : "Enregistrer les préférences"}
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent> */}
       </Tabs>
     </div>
   )

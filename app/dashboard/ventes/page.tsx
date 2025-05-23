@@ -26,7 +26,7 @@ import { Filter, MoreHorizontal, Search, ShoppingBag } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { commandesAPI, produitsAPI, clientsAPI } from "@/lib/api"
+import { ventesAPI, produitsAPI, clientsAPI } from "@/lib/api"
 
 interface Client {
   _id: string
@@ -77,7 +77,7 @@ export default function CommandesPage() {
   useEffect(() => {
     const fetchAll = async () => {
       const [cmdRes, prodRes, clientRes] = await Promise.all([
-        commandesAPI.getAll(),
+        ventesAPI.getAll(),
         produitsAPI.getAll(),
         clientsAPI.getAll(),
       ])
@@ -121,7 +121,7 @@ export default function CommandesPage() {
     }
   
     try {
-      const res = await commandesAPI.create(nouvelleCommande)
+      const res = await ventesAPI.create(nouvelleCommande)
       setCommandes(prev => [...prev, res.data])
       setDialogOpen(false)
     } catch (err) {

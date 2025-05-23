@@ -1,7 +1,7 @@
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://assurvente.shop/api";
-// const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+// const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://assurvente.shop/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
 
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY || "super-cle-api-123456";
 
@@ -54,11 +54,19 @@ export const produitsAPI = {
     description?: string;
     image?: string;
   }) => api.post("/produits", data),
+
+  update: (id: string, data: {
+    nom: string;
+    prix: number;
+    stock: number;
+    description?: string;
+    image?: string;
+  }) => api.put(`/produits/${id}`, data),
 };
 
-// 📑 Commandes
-export const commandesAPI = {
-  getAll: () => api.get("/commandes"),
+// 📑 Ventes
+export const ventesAPI = {
+  getAll: () => api.get("/ventes"),
   create: (data: {
     _id?: string;
     produitId: string;
@@ -72,7 +80,7 @@ export const commandesAPI = {
     statut: "preparation" | "expediee" | "livree" | "annulee";
     paiement: "attente" | "paye" | "rembourse";
     dateCommande: string;
-  }) => api.post("/commandes", data),
+  }) => api.post("/ventes", data),
 };
 
 // 💰 Paiements

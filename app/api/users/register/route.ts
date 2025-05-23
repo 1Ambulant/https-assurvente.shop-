@@ -21,6 +21,7 @@ export async function POST(req: Request) {
         const result = await db.collection("users").insertOne({
             ...body,
             motDePasse: hashedPassword,
+            role: "admin",
         });
 
         return NextResponse.json({ message: "Inscription réussie", insertedId: result.insertedId });

@@ -132,6 +132,9 @@ export default function ProduitsPage() {
 
   const [produits, setProduits] = useState<Produit[]>([])
 
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [selectedProduit, setSelectedProduit] = useState<Produit | null>(null)
+
   useEffect(() => {
     const loadProduits = async () => {
       try {
@@ -190,87 +193,6 @@ export default function ProduitsPage() {
           />
         </div>
 
-        {/* <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              <SlidersHorizontal className="mr-2 h-4 w-4" /> Filtrer
-              {(selectedCategory || selectedStatus || selectedBrand) && (
-                <Badge className="ml-2 bg-blue-600" variant="secondary">
-                  {[selectedCategory, selectedStatus, selectedBrand].filter(Boolean).length}
-                </Badge>
-              )}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Filtrer les produits</DialogTitle>
-              <DialogDescription>Sélectionnez les critères pour filtrer la liste des produits.</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Catégorie</label>
-                <Select value={selectedCategory || "all"} onValueChange={setSelectedCategory}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Toutes les catégories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Toutes les catégories</SelectItem>
-                    <SelectItem value="Réfrigérateurs">Réfrigérateurs</SelectItem>
-                    <SelectItem value="Machines à laver">Machines à laver</SelectItem>
-                    <SelectItem value="Climatiseurs">Climatiseurs</SelectItem>
-                    <SelectItem value="Cuisinières">Cuisinières</SelectItem>
-                    <SelectItem value="Micro-ondes">Micro-ondes</SelectItem>
-                    <SelectItem value="Lave-vaisselles">Lave-vaisselles</SelectItem>
-                    <SelectItem value="Congélateurs">Congélateurs</SelectItem>
-                    <SelectItem value="Fours">Fours</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Statut</label>
-                <Select value={selectedStatus || "all"} onValueChange={setSelectedStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Tous les statuts" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les statuts</SelectItem>
-                    <SelectItem value="en stock">En stock</SelectItem>
-                    <SelectItem value="rupture">Rupture de stock</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Marque</label>
-                <Select value={selectedBrand || "all"} onValueChange={setSelectedBrand}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Toutes les marques" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Toutes les marques</SelectItem>
-                    <SelectItem value="Samsung">Samsung</SelectItem>
-                    <SelectItem value="LG">LG</SelectItem>
-                    <SelectItem value="Daikin">Daikin</SelectItem>
-                    <SelectItem value="Bosch">Bosch</SelectItem>
-                    <SelectItem value="Panasonic">Panasonic</SelectItem>
-                    <SelectItem value="Whirlpool">Whirlpool</SelectItem>
-                    <SelectItem value="Haier">Haier</SelectItem>
-                    <SelectItem value="Moulinex">Moulinex</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter className="flex justify-between">
-              <Button variant="outline" onClick={resetFilters}>
-                Réinitialiser
-              </Button>
-              <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setFilterOpen(false)}>
-                Appliquer les filtres
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog> */}
       </div>
 
       <div className="border rounded-md">
@@ -324,11 +246,31 @@ export default function ProduitsPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>Voir les détails</DropdownMenuItem>
-                        <DropdownMenuItem>Modifier</DropdownMenuItem>
-                        <DropdownMenuItem>Dupliquer</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-500">Supprimer</DropdownMenuItem>
+                        <Link href={`/dashboard/produits/${produit._id}`}>
+                          <DropdownMenuItem>
+                            Voir le produit
+                          </DropdownMenuItem>
+                        </Link>
+
+                        <Link href={`/dashboard/produits/modifier/${produit._id}`}>
+                          <DropdownMenuItem>
+                            Modifier le produit
+                          </DropdownMenuItem>
+                        </Link>
+
+                        <DropdownMenuItem
+                          className="text-red-500"
+                          onClick={async () => {
+                            const confirmed = confirm("Voulez-vous vraiment supprimer ce produit ?");
+                            if (!confirmed) return;
+
+                            await fetch(`/api/produits/${produit._id}`, { method: "DELETE" });
+                            window.location.reload();
+                          }}
+                        >
+                          Supprimer
+                        </DropdownMenuItem>
+
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

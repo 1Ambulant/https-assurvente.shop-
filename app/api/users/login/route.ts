@@ -1,3 +1,4 @@
+// /api/auth/login/route.ts
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -13,7 +14,18 @@ export async function POST(req: Request) {
     const { email, motDePasse } = await req.json();
     const db = await mongo.connectToDb();
 
-    const user = await db.collection("users").findOne({ email });
+    const collections = ["users", "clients", "partenaires"];
+    let user = null;
+    let fromCollection = null;
+
+    for (const collection of collections) {
+      const u = await db.collection(collection).findOne({ email });
+      if (u) {
+        user = u;
+        fromCollection = collection;
+        break;
+      }
+    }
 
     if (!user || !(await bcrypt.compare(motDePasse, user.motDePasse))) {
       return NextResponse.json(
@@ -28,13 +40,11 @@ export async function POST(req: Request) {
         nom: user.nom,
         email: user.email,
         role: user.role,
+        collection: fromCollection,
       },
       process.env.JWT_SECRET!,
       { expiresIn: "7d" }
     );
-
-    console.log("Token JWT généré :", token);
-    console.log(process.env.JWT_SECRET);
 
     (await cookies()).set("token", token, {
       httpOnly: false,
@@ -43,10 +53,12 @@ export async function POST(req: Request) {
       maxAge: 60 * 60 * 24 * 7,
     });
 
-    // ✅ Retourner aussi le token dans la réponse JSON
     return NextResponse.json({
+      id : user._id,
       message: "Connexion réussie",
       token,
+      role: user.role,
+      nom: user.nom,
     });
   } catch (err) {
     return NextResponse.json({ error: "Erreur login" }, { status: 500 });

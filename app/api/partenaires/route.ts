@@ -1,19 +1,39 @@
-import { NextResponse } from "next/server"
-import { mongo } from "@/lib/mongodb"
+// /api/partenaires/route.ts
+import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { mongo } from "@/lib/mongodb";
+import { validateApiKey } from "@/lib/verifyApiKey";
 
 export async function POST(req: Request) {
-  const body = await req.json()
-  const db = await mongo.connectToDb()
-  const result = await db.collection("partenaires").insertOne({
-    ...body,
-    datePartenariat: new Date().toISOString().split("T")[0],
-  })
+  const error = validateApiKey(req);
+  if (error) return error;
 
-  return NextResponse.json({ insertedId: result.insertedId })
+  try {
+    const body = await req.json();
+    const db = await mongo.connectToDb();
+
+    const existing = await db.collection("partenaires").findOne({ email: body.email });
+    if (existing) {
+      return NextResponse.json({ error: "Email déjà utilisé" }, { status: 400 });
+    }
+
+    const hashedPassword = await bcrypt.hash("password", 10);
+
+    const result = await db.collection("partenaires").insertOne({
+      ...body,
+      motDePasse: hashedPassword,
+      datePartenariat: new Date().toISOString().split("T")[0],
+      role: "partenaire",
+    });
+
+    return NextResponse.json({ insertedId: result.insertedId });
+  } catch (error) {
+    return NextResponse.json({ error: "Erreur ajout partenaire" }, { status: 500 });
+  }
 }
 
 export async function GET() {
-  const db = await mongo.connectToDb()
-  const partenaires = await db.collection("partenaires").find().toArray()
-  return NextResponse.json(partenaires)
+  const db = await mongo.connectToDb();
+  const partenaires = await db.collection("partenaires").find().toArray();
+  return NextResponse.json(partenaires);
 }

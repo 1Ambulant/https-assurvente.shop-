@@ -41,8 +41,11 @@ export default function ConnexionPage() {
       // ✅ Stocke le token dans localStorage
       localStorage.setItem("token", data.token);
     
-      console.log("Connexion réussie ✅", data);
+      console.log("data", data);
     
+      localStorage.setItem("role", data.role);
+      localStorage.setItem("id", data.id);
+
       // ✅ Redirige vers le dashboard
       router.push("/dashboard");
     } catch (err: any) {
