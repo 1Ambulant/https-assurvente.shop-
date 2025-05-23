@@ -31,63 +31,83 @@ interface NavItem {
   title: string
   href: string
   icon: React.ElementType
+  roles: string[] // Ajout des rôles pour chaque item
 }
 
 export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps) {
   const pathname = usePathname()
+  const userRole = typeof window !== "undefined" ? localStorage.getItem("role") : null
 
   const navItems: NavItem[] = [
     {
       title: "Tableau de bord",
       href: "/dashboard",
       icon: Home,
+      roles: ["admin"],
     },
     {
       title: "Produits",
       href: "/dashboard/produits",
       icon: Box,
+      roles: ["admin", "client"],
     },
     {
       title: "Clients",
       href: "/dashboard/clients",
       icon: Users,
+      roles: ["admin"],
     },
     {
       title: "Ventes",
       href: "/dashboard/ventes",
       icon: ShoppingBag,
+      roles: ["admin"],
+    },
+    {
+      title: "Commandes",
+      href: "/dashboard/commandes",
+      icon: ShoppingCart,
+      roles: ["admin"],
     },
     {
       title: "Paiements",
       href: "/dashboard/paiements",
       icon: CreditCard,
+      roles: ["admin", "client"],
     },
     {
       title: "Partenaires",
       href: "/dashboard/partenaires",
       icon: Handshake,
+      roles: ["admin", "client"],
     },
     {
       title: "Géolocalisation",
       href: "/dashboard/geolocalisation",
       icon: MapPin,
+      roles: ["admin"],
     },
     {
       title: "Contrôle à distance",
       href: "/dashboard/controle",
       icon: RemoteControl,
+      roles: ["admin"],
     },
     {
       title: "Statistiques",
       href: "/dashboard/statistiques",
       icon: BarChart3,
+      roles: ["admin"],
     },
     {
       title: "Paramètres",
       href: "/dashboard/parametres",
       icon: Settings,
+      roles: ["admin", "client"]
     },
   ]
+
+  const visibleItems = navItems.filter((item) => item.roles.includes(userRole || ""))
 
   return (
     <>
@@ -132,7 +152,7 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
         </div>
 
         <nav className="flex flex-col gap-1 p-4 overflow-y-auto max-h-[calc(100vh-4rem)]">
-          {navItems.map((item) => (
+          {visibleItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
