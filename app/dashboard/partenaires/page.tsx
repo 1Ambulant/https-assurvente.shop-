@@ -17,7 +17,7 @@ import {
   DialogHeader, DialogTitle, DialogTrigger
 } from "@/components/ui/dialog"
 import {
-  Avatar, AvatarFallback, AvatarImage
+  Avatar, AvatarFallback
 } from "@/components/ui/avatar"
 import { Label } from "@/components/ui/label"
 import {
@@ -25,19 +25,15 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Tabs, TabsContent, TabsList, TabsTrigger
-} from "@/components/ui/tabs"
-
-import { Filter, MoreHorizontal, Plus, Search, Handshake, Check, X } from "lucide-react"
+import { Search, MoreHorizontal, Plus } from "lucide-react"
 import { partenariatsAPI } from "@/lib/api"
-
 
 export default function PartenairesPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [partenaires, setPartenaires] = useState<any[]>([])
+  const [editingPartenaire, setEditingPartenaire] = useState<any | null>(null)
 
   const fetchPartenaires = async () => {
     try {
@@ -52,14 +48,7 @@ export default function PartenairesPage() {
     fetchPartenaires()
   }, [])
 
-  const filteredPartenaires = partenaires.filter(
-    (p) =>
-      p.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.contact?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.type?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
-  const handleAddPartenaire = async (e: React.FormEvent) => {
+  const handleSavePartenaire = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
@@ -82,18 +71,41 @@ export default function PartenairesPage() {
         },
         statut: "actif" as const,
       }
-      
 
-      await partenariatsAPI.create(partenaire)
-      fetchPartenaires()
-      setAddDialogOpen(false)
+      if (editingPartenaire) {
+        await partenariatsAPI.update(editingPartenaire._id, partenaire)
+      } else {
+        await partenariatsAPI.create(partenaire)
+      }
+
+      await fetchPartenaires()
+      setDialogOpen(false)
+      setEditingPartenaire(null)
       form.reset()
     } catch (err) {
-      console.error("Erreur ajout partenaire :", err)
+      console.error("Erreur sauvegarde partenaire :", err)
     } finally {
       setLoading(false)
     }
   }
+
+  const handleDelete = async (id: string) => {
+    const confirmed = confirm("Voulez-vous vraiment supprimer ce partenaire ?")
+    if (!confirmed) return
+
+    try {
+      await partenariatsAPI.remove(id)
+      await fetchPartenaires()
+    } catch (err) {
+      console.error("Erreur suppression partenaire :", err)
+    }
+  }
+
+  const filteredPartenaires = partenaires.filter((p) =>
+    p.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.contact?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.type?.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   return (
     <div className="space-y-6">
@@ -102,27 +114,30 @@ export default function PartenairesPage() {
           <h1 className="text-3xl font-bold">Partenaires</h1>
           <p className="text-muted-foreground">Gérez vos partenaires commerciaux.</p>
         </div>
-        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          setDialogOpen(open)
+          if (!open) setEditingPartenaire(null)
+        }}>
           <DialogTrigger asChild>
             <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="mr-2 h-4 w-4" /> Ajouter un partenaire
+              <Plus className="mr-2 h-4 w-4" /> {editingPartenaire ? "Modifier" : "Ajouter"} un partenaire
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Ajouter un nouveau partenaire</DialogTitle>
+              <DialogTitle>{editingPartenaire ? "Modifier le partenaire" : "Ajouter un nouveau partenaire"}</DialogTitle>
               <DialogDescription>Remplissez les informations ci-dessous.</DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleAddPartenaire}>
+            <form onSubmit={handleSavePartenaire}>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="nom">Nom</Label>
-                    <Input id="nom" name="nom" required />
+                    <Input id="nom" name="nom" required defaultValue={editingPartenaire?.nom || ""} />
                   </div>
                   <div>
                     <Label htmlFor="type">Type</Label>
-                    <Select name="type">
+                    <Select name="type" defaultValue={editingPartenaire?.type || undefined}>
                       <SelectTrigger>
                         <SelectValue placeholder="Sélectionnez un type" />
                       </SelectTrigger>
@@ -137,40 +152,34 @@ export default function PartenairesPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="contact">Email</Label>
-                    <Input id="contact" name="contact" type="email" required />
+                    <Input id="contact" name="contact" type="email" required defaultValue={editingPartenaire?.contact || ""} />
                   </div>
                   <div>
                     <Label htmlFor="telephone">Téléphone</Label>
-                    <Input id="telephone" name="telephone" required />
+                    <Input id="telephone" name="telephone" required defaultValue={editingPartenaire?.telephone || ""} />
                   </div>
                 </div>
                 <div>
                   <Label htmlFor="adresse">Adresse</Label>
-                  <Input id="adresse" name="adresse" />
+                  <Input id="adresse" name="adresse" defaultValue={editingPartenaire?.adresse || ""} />
                 </div>
                 <div>
                   <Label htmlFor="description">Description</Label>
-                  <Textarea id="description" name="description" rows={3} />
+                  <Textarea id="description" name="description" rows={3} defaultValue={editingPartenaire?.description || ""} />
                 </div>
                 <div className="space-y-2">
                   <Label>Accès</Label>
                   <div className="flex flex-col space-y-2">
-                    <div>
-                      <Checkbox id="geolocalisation" name="geolocalisation" />
-                      <Label htmlFor="geolocalisation" className="ml-2">Géolocalisation</Label>
-                    </div>
-                    <div>
-                      <Checkbox id="controle" name="controle" />
-                      <Label htmlFor="controle" className="ml-2">Contrôle</Label>
-                    </div>
-                    <div>
-                      <Checkbox id="statistiques" name="statistiques" />
-                      <Label htmlFor="statistiques" className="ml-2">Statistiques</Label>
-                    </div>
-                    <div>
-                      <Checkbox id="clients" name="clients" />
-                      <Label htmlFor="clients" className="ml-2">Clients</Label>
-                    </div>
+                    {['geolocalisation', 'controle', 'statistiques', 'clients'].map((acces) => (
+                      <div key={acces}>
+                        <Checkbox
+                          id={acces}
+                          name={acces}
+                          defaultChecked={editingPartenaire?.acces?.[acces] || false}
+                        />
+                        <Label htmlFor={acces} className="ml-2 capitalize">{acces}</Label>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -234,10 +243,16 @@ export default function PartenairesPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        <DropdownMenuItem>Voir</DropdownMenuItem>
-                        <DropdownMenuItem>Modifier</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          setEditingPartenaire(p)
+                          setDialogOpen(true)
+                        }}>
+                          Modifier
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600">Supprimer</DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(p._id)}>
+                          Supprimer
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

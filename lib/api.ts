@@ -131,6 +131,10 @@ export const partenariatsAPI = {
     };
     statut?: "actif" | "inactif";
   }) => api.post("/partenaires", data),
+
+  update: (id: string, data: any) => api.put("/partenaires", { _id: id, ...data }),
+  remove: (id: string) => api.delete("/partenaires", { data: { id } }),
 };
+
 
 export default api;
