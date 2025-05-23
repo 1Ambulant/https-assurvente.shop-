@@ -71,7 +71,14 @@ export function Navbar({ setIsMobileMenuOpen }: NavbarProps) {
                 <span>Paramètres</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-500">
+              <DropdownMenuItem
+                className="text-red-500"
+                onClick={() => {
+                  localStorage.removeItem("token")
+                  document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
+                  window.location.href = "/connexion"
+                }}
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Déconnexion</span>
               </DropdownMenuItem>
