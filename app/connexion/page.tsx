@@ -45,6 +45,7 @@ export default function ConnexionPage() {
     
       localStorage.setItem("role", data.role);
       localStorage.setItem("id", data.id);
+      localStorage.setItem("nom", data.nom);
 
       // ✅ Redirige vers le dashboard
       router.push("/dashboard");

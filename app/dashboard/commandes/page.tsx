@@ -25,8 +25,8 @@ import {
 import { Filter, MoreHorizontal, Search, ShoppingBag } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { ventesAPI, produitsAPI, clientsAPI } from "@/lib/api"
+import { ventesAPI, produitsAPI, clientsAPI, commandesAPI } from "@/lib/api"
+import { AxiosResponse } from "axios"
 
 interface Client {
   _id: string
@@ -52,14 +52,14 @@ export interface Commande {
   paiementEchelonne?: boolean
   nombreEcheances?: number
   acompteInitial?: number
+  commande?: string
 }
-
 
 export default function CommandesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [commande, setCommande] = useState<string>("");
+  const [commande, setCommande] = useState<string>("")
 
   const [clients, setClients] = useState<Client[]>([])
   const [produits, setProduits] = useState<Produit[]>([])
@@ -72,12 +72,12 @@ export default function CommandesPage() {
   const [statut, setStatut] = useState<Commande["statut"]>("preparation")
   const [paiementEchelonne, setPaiementEchelonne] = useState(false)
   const [nombreEcheances, setNombreEcheances] = useState(1)
-
+  const [commandeAEditer, setCommandeAEditer] = useState<Commande | null>(null)
 
   useEffect(() => {
     const fetchAll = async () => {
       const [cmdRes, prodRes, clientRes] = await Promise.all([
-        ventesAPI.getAll(),
+        commandesAPI.getAll(),
         produitsAPI.getAll(),
         clientsAPI.getAll(),
       ])
@@ -88,25 +88,38 @@ export default function CommandesPage() {
     fetchAll()
   }, [])
 
+  useEffect(() => {
+    if (commandeAEditer) {
+      setClientId(commandeAEditer.clientId)
+      setProduitId(commandeAEditer.produitId)
+      setQuantite(commandeAEditer.quantite)
+      setPaiement(commandeAEditer.paiement)
+      setStatut(commandeAEditer.statut)
+      setPaiementEchelonne(commandeAEditer.paiementEchelonne || false)
+      setNombreEcheances(commandeAEditer.nombreEcheances || 1)
+      setDialogOpen(true)
+    }
+  }, [commandeAEditer])
+
   const handleAddCommande = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-  
+
     const produit = produits.find(p => p._id === produitId)
     const client = clients.find(c => c._id === clientId)
-  
+
     if (!produit || !client) {
       alert("Client ou produit introuvable.")
       return
     }
-  
+
     let montant = produit.prix * quantite
-  
+
     if (paiementEchelonne && nombreEcheances > 1) {
       const tauxMajoration = 0.05
       montant *= 1 + tauxMajoration * nombreEcheances
     }
-  
+
     const nouvelleCommande: Omit<Commande, "_id"> & { commande: string } = {
       clientId,
       produitId,
@@ -119,27 +132,40 @@ export default function CommandesPage() {
       ...(paiementEchelonne ? { nombreEcheances } : {}),
       commande: `${client.prenom} ${client.nom} - ${produit.nom}`,
     }
-  
+
     try {
-      const res = await ventesAPI.create(nouvelleCommande)
-      setCommandes(prev => [...prev, res.data])
+      let res: AxiosResponse<any, any>
+      if (commandeAEditer?._id) {
+        res = await commandesAPI.update(commandeAEditer._id, nouvelleCommande)
+        setCommandes(prev =>
+          prev.map(c => c._id === commandeAEditer._id ? res.data : c)
+        )
+      } else {
+        res = await commandesAPI.create(nouvelleCommande)
+        setCommandes(prev => [...prev, res.data])
+      }
+
       setDialogOpen(false)
+      setCommandeAEditer(null)
     } catch (err) {
       console.error("Erreur:", err)
+      alert("Erreur lors de l'enregistrement.")
     } finally {
       setLoading(false)
     }
   }
-  
 
-  const filteredCommandes = commandes
+  const filteredCommandes = commandes.filter(c =>
+    c.commande?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c._id?.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between gap-4 md:items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Commandes</h1>
-          <p className="text-muted-foreground">Gérez les commandes de vos clients.</p>
+          <p className="text-muted-foreground">Gérez les ventes de vos clients.</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -147,7 +173,7 @@ export default function CommandesPage() {
               <ShoppingBag className="mr-2 h-4 w-4" /> Ajouter une commande
             </Button>
           </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Ajouter une nouvelle commande</DialogTitle>
               <DialogDescription>Remplissez les informations nécessaires.</DialogDescription>
@@ -311,10 +337,35 @@ export default function CommandesPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem>Voir</DropdownMenuItem>
-                      <DropdownMenuItem>Modifier</DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-500">Supprimer</DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setCommandeAEditer(commande);
+                          setDialogOpen(true);
+                        }}
+                      >
+                        Modifier
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-red-500"
+                        onClick={async () => {
+                          const confirmed = confirm("Voulez-vous vraiment supprimer cette commande ?");
+                          if (!confirmed || !commande._id) return;
+
+                          try {
+                            await commandesAPI.remove(commande._id);
+                            alert("Commande supprimée avec succès");
+                            window.location.reload();
+                          } catch (err) {
+                            console.error("Erreur suppression :", err);
+                            alert("Erreur lors de la suppression");
+                          }
+                        }}
+                      >
+                        Supprimer
+                      </DropdownMenuItem>
+
                     </DropdownMenuContent>
+
                   </DropdownMenu>
                 </TableCell>
               </TableRow>

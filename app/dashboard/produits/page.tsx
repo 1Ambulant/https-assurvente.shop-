@@ -27,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MoreHorizontal, Plus, Search, SlidersHorizontal } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import { CommandeDialog } from "@/components/commande-dialog"
 
 interface Produit {
   _id: string
@@ -225,7 +226,7 @@ export default function ProduitsPage() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{produit.prix}</TableCell>
+                  <TableCell>{produit.prix.toLocaleString()} XOF</TableCell>
                   <TableCell>{produit.stock}</TableCell>
                   <TableCell>
                     <Badge
@@ -236,43 +237,39 @@ export default function ProduitsPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <Link href={`/dashboard/produits/${produit._id}`}>
-                          <DropdownMenuItem>
-                            Voir le produit
+                    {typeof window !== "undefined" && localStorage.getItem("role") === "client" ? (
+                      <CommandeDialog produit={produit} />
+                    ) : (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <Link href={`/dashboard/produits/${produit._id}`}>
+                            <DropdownMenuItem>Voir le produit</DropdownMenuItem>
+                          </Link>
+                          <Link href={`/dashboard/produits/modifier/${produit._id}`}>
+                            <DropdownMenuItem>Modifier le produit</DropdownMenuItem>
+                          </Link>
+                          <DropdownMenuItem
+                            className="text-red-500"
+                            onClick={async () => {
+                              const confirmed = confirm("Voulez-vous vraiment supprimer ce produit ?");
+                              if (!confirmed) return;
+                              await fetch(`/api/produits/${produit._id}`, { method: "DELETE" });
+                              window.location.reload();
+                            }}
+                          >
+                            Supprimer
                           </DropdownMenuItem>
-                        </Link>
-
-                        <Link href={`/dashboard/produits/modifier/${produit._id}`}>
-                          <DropdownMenuItem>
-                            Modifier le produit
-                          </DropdownMenuItem>
-                        </Link>
-
-                        <DropdownMenuItem
-                          className="text-red-500"
-                          onClick={async () => {
-                            const confirmed = confirm("Voulez-vous vraiment supprimer ce produit ?");
-                            if (!confirmed) return;
-
-                            await fetch(`/api/produits/${produit._id}`, { method: "DELETE" });
-                            window.location.reload();
-                          }}
-                        >
-                          Supprimer
-                        </DropdownMenuItem>
-
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </TableCell>
                 </TableRow>
               ))
@@ -290,6 +287,7 @@ export default function ProduitsPage() {
               </TableRow>
             )}
           </TableBody>
+
         </Table>
       </div>
     </div>

@@ -10,7 +10,7 @@ import {
 } from "lucide-react"
 import { VentesRecentes } from "@/components/dashboard/ventes-recentes"
 import { CommandesRecentes } from "@/components/dashboard/commandes-recentes"
-import { produitsAPI, clientsAPI, ventesAPI, partenariatsAPI } from "@/lib/api"
+import { produitsAPI, clientsAPI, ventesAPI, partenariatsAPI, commandesAPI } from "@/lib/api"
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -18,27 +18,35 @@ export default function DashboardPage() {
     clients: 0,
     commandes: 0,
     partenaires: 0,
+    commandePassee: 0,
   })
 
   useEffect(() => {
     const fetchDashboardStats = async () => {
+
       try {
-        const [produitsRes, clientsRes, commandesRes, partenairesRes] = await Promise.all([
+        const [produitsRes, clientsRes, commandesRes, partenairesRes, commandesPasseeRes] = await Promise.all([
           produitsAPI.getAll(),
           clientsAPI.getAll(),
           ventesAPI.getAll(),
           partenariatsAPI.getAll(),
+          commandesAPI.getAll(),
         ])
 
-        const ventesTotal = produitsRes.data.reduce((total: number, produit: any) => {
+        console.log(commandesRes.data);
+
+        const ventesTotal = commandesRes.data.reduce((total: number, produit: any) => {
           return total + (produit.prix || 0)
         }, 0)
+
+        console.log(clientsRes.data);
 
         setStats({
           ventesTotal,
           clients: clientsRes.data.length,
           commandes: commandesRes.data.length,
           partenaires: partenairesRes.data.length,
+          commandePassee: commandesPasseeRes.data.length,
         })
       } catch (error) {
         console.error("Erreur chargement stats dashboard", error)

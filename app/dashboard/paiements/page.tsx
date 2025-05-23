@@ -243,12 +243,27 @@ export default function PaiementsPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>Voir les détails</DropdownMenuItem>
-                        <DropdownMenuItem>Générer un reçu</DropdownMenuItem>
-                        <DropdownMenuItem>Envoyer une confirmation</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-500">Annuler</DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-red-500"
+                          onClick={async () => {
+                            const confirmed = confirm("Voulez-vous vraiment supprimer ce paiement ?");
+                            if (!confirmed || !p._id) return;
+
+                            try {
+                              await paiementsAPI.remove(p._id);
+                              alert("Paiement supprimé avec succès.");
+                              fetchPaiements();
+                            } catch (error) {
+                              console.error("Erreur suppression :", error);
+                              alert("Erreur lors de la suppression.");
+                            }
+                          }}
+                        >
+                          Supprimer
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
+
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>

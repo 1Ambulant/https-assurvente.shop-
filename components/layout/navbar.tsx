@@ -12,13 +12,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 
 interface NavbarProps {
   setIsMobileMenuOpen: (open: boolean) => void
 }
 
 export function Navbar({ setIsMobileMenuOpen }: NavbarProps) {
+
+  const nom = typeof window !== "undefined" ? localStorage.getItem("nom") || "?" : "?"
+  const initiale = nom.charAt(0).toUpperCase()
+
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
       <div className="flex items-center justify-between h-16 px-4 md:px-6">
@@ -35,27 +38,12 @@ export function Navbar({ setIsMobileMenuOpen }: NavbarProps) {
         </div>
 
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="relative">
-            <ShoppingCart className="h-5 w-5" />
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-blue-600">
-              3
-            </Badge>
-            <span className="sr-only">Panier</span>
-          </Button>
-
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-blue-600">
-              5
-            </Badge>
-            <span className="sr-only">Notifications</span>
-          </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-blue-100 text-blue-600">AD</AvatarFallback>
+                  <AvatarFallback className="bg-blue-100 text-blue-600">{initiale}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>

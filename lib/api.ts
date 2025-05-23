@@ -94,7 +94,12 @@ export const paiementsAPI = {
     statut: string;
     commande: string;
   }) => api.post("/paiements", data),
+
+  // 🔍 Paiements spécifiques à un client
+  getByClient: (clientId: string) => api.get(`/paiements/client/${clientId}`),
+  remove: (id: string) => api.delete(`/paiements/${id}`),
 };
+
 
 // 👤 Clients
 export const clientsAPI = {
@@ -134,6 +139,31 @@ export const partenariatsAPI = {
 
   update: (id: string, data: any) => api.put("/partenaires", { _id: id, ...data }),
   remove: (id: string) => api.delete("/partenaires", { data: { id } }),
+};
+
+// 📦 Commandes
+export const commandesAPI = {
+  getAll: () => api.get("/commandes"),
+  
+  getByClient: (clientId: string) => api.get(`/commandes/client/${clientId}`),
+
+  create: (data: {
+    clientId: string;
+    produitId: string;
+    quantite: number;
+    montantTotal: number;
+    paiementEchelonne?: boolean;
+    nombreEcheances?: number;
+    acompteInitial?: number;
+    commande: string;
+    statut: "preparation" | "expediee" | "livree" | "annulee";
+    paiement: "attente" | "paye" | "rembourse";
+    dateCommande: string;
+  }) => api.post("/commandes", data),
+
+  update: (id: string, data: any) => api.put(`/commandes/${id}`, data),
+
+  remove: (id: string) => api.delete(`/commandes/${id}`)
 };
 
 

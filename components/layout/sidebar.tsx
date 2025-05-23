@@ -52,15 +52,21 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
       roles: ["admin", "client"],
     },
     {
+      title: "Mes Commandes",
+      href: "/dashboard/mescommandes",
+      icon: ShoppingCart,
+      roles: ["client"],
+    },
+    {
+      title: "Mes Paiements",
+      href: "/dashboard/mespaiements",
+      icon: CreditCard,
+      roles: ["client"],
+    },
+    {
       title: "Clients",
       href: "/dashboard/clients",
       icon: Users,
-      roles: ["admin"],
-    },
-    {
-      title: "Ventes",
-      href: "/dashboard/ventes",
-      icon: ShoppingBag,
       roles: ["admin"],
     },
     {
@@ -73,13 +79,13 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
       title: "Paiements",
       href: "/dashboard/paiements",
       icon: CreditCard,
-      roles: ["admin", "client"],
+      roles: ["admin"],
     },
     {
       title: "Partenaires",
       href: "/dashboard/partenaires",
       icon: Handshake,
-      roles: ["admin", "client"],
+      roles: ["admin"],
     },
     {
       title: "Géolocalisation",
