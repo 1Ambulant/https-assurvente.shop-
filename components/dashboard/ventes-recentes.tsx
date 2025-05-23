@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { ventesAPI } from "@/lib/api"
 
