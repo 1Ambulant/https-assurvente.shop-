@@ -6,6 +6,7 @@ export async function middleware(request: NextRequest) {
 
   const isPublic =
     request.nextUrl.pathname === "/" ||
+    request.nextUrl.pathname.startsWith("/inscription") ||
     request.nextUrl.pathname.startsWith("/connexion");
 
   if (!token && !isPublic) {

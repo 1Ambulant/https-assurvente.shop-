@@ -69,7 +69,6 @@ export default function PartenairesPage() {
           statistiques: formData.get("statistiques") === "on",
           clients: formData.get("clients") === "on",
         },
-        statut: "actif" as const,
       }
 
       if (editingPartenaire) {
@@ -212,7 +211,6 @@ export default function PartenairesPage() {
               <TableHead>Nom</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Contact</TableHead>
-              <TableHead>Statut</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -230,11 +228,6 @@ export default function PartenairesPage() {
                   </TableCell>
                   <TableCell>{p.type}</TableCell>
                   <TableCell>{p.contact}</TableCell>
-                  <TableCell>
-                    <Badge className={p.statut === "actif" ? "bg-green-500" : "bg-gray-500"}>
-                      {p.statut}
-                    </Badge>
-                  </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

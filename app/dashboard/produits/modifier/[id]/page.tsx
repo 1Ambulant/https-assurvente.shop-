@@ -20,9 +20,9 @@ export default function ModifierProduitPage() {
   const [loading, setLoading] = useState(false)
   const [nom, setNom] = useState("")
   const [prix, setPrix] = useState<number>(0)
-  const [stock, setStock] = useState<number>(0)
   const [description, setDescription] = useState("")
   const [image, setImage] = useState("")
+  const [error, setError] = useState("")
 
   useEffect(() => {
     const fetchProduit = async () => {
@@ -31,11 +31,11 @@ export default function ModifierProduitPage() {
         const data = await res.json()
         setNom(data.nom)
         setPrix(data.prix)
-        setStock(data.stock)
         setDescription(data.description || "")
         setImage(data.image || "")
       } catch (err) {
         console.error("Erreur chargement produit :", err)
+        setError("Erreur lors du chargement du produit")
       }
     }
 
@@ -45,12 +45,18 @@ export default function ModifierProduitPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError("")
+
+    if (!nom || prix == null) {
+      setError("Veuillez remplir tous les champs obligatoires")
+      setLoading(false)
+      return
+    }
 
     try {
       await produitsAPI.update(id, {
         nom,
         prix,
-        stock,
         description,
         image
       })
@@ -58,7 +64,7 @@ export default function ModifierProduitPage() {
       router.push("/dashboard/produits")
     } catch (error) {
       console.error("Erreur lors de la modification :", error)
-      alert("Erreur lors de la modification.")
+      setError("Une erreur est survenue lors de la modification du produit")
     } finally {
       setLoading(false)
     }
@@ -83,6 +89,11 @@ export default function ModifierProduitPage() {
         </div>
       </div>
       <form onSubmit={handleSubmit} className="space-y-6">
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
         <Card>
           <CardHeader>
             <CardTitle>Informations du produit</CardTitle>
@@ -96,10 +107,6 @@ export default function ModifierProduitPage() {
             <div className="space-y-2">
               <Label htmlFor="prix">Prix (XOF)</Label>
               <Input id="prix" type="number" value={prix ?? ''} onChange={(e) => setPrix(Number(e.target.value))} required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="stock">Quantité en stock</Label>
-              <Input id="stock" type="number" value={stock ?? ''} onChange={(e) => setStock(Number(e.target.value))} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>

@@ -36,9 +36,7 @@ export interface Client {
   initiales: string
   email: string
   telephone: string
-  statut: "actif" | "inactif"
   type: "Particulier" | "Entreprise"
-  dateInscription: string
 }
 
 function getInitials(nom: string, prenom: string): string {
@@ -62,17 +60,11 @@ export default function ClientsPage() {
   const [pays, setPays] = useState("sn")
   const [type, setType] = useState<"Particulier" | "Entreprise">("Particulier")
   const [statut, setStatut] = useState<"actif" | "inactif">("actif")
-  const [dateInscription, setDateInscription] = useState<string>("")
 
   useEffect(() => {
     fetchClients()
 
-    const currentDate = new Date().toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    })
-    setDateInscription(currentDate)
+
   }, [])
 
   const fetchClients = async () => {
@@ -98,8 +90,6 @@ export default function ClientsPage() {
       ville,
       pays,
       type,
-      statut,
-      dateInscription,
     })
 
     try {
@@ -112,8 +102,6 @@ export default function ClientsPage() {
         ville,
         pays,
         type,
-        statut,
-        dateInscription,
       })
 
       setDialogOpen(false)
@@ -274,8 +262,6 @@ export default function ClientsPage() {
               <TableHead>Client</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Contact</TableHead>
-              <TableHead>Date d'inscription</TableHead>
-              <TableHead>Statut</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -301,15 +287,6 @@ export default function ClientsPage() {
                       <div>{client.email}</div>
                       <div className="text-muted-foreground">{client.telephone}</div>
                     </div>
-                  </TableCell>
-                  <TableCell>{client.dateInscription}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={client.statut === "actif" ? "default" : "secondary"}
-                      className={client.statut === "actif" ? "bg-green-500" : "bg-gray-500"}
-                    >
-                      {client.statut}
-                    </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>

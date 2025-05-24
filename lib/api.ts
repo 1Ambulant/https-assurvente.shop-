@@ -11,6 +11,7 @@ const api = axios.create({
     "Content-Type": "application/json",
     "x-api-key": API_KEY,
   },
+  withCredentials: true,
 });
 
 api.interceptors.request.use((config) => {
@@ -50,7 +51,6 @@ export const produitsAPI = {
   create: (data: {
     nom: string;
     prix: number;
-    stock: number;
     description?: string;
     image?: string;
   }) => api.post("/produits", data),
@@ -58,7 +58,6 @@ export const produitsAPI = {
   update: (id: string, data: {
     nom: string;
     prix: number;
-    stock: number;
     description?: string;
     image?: string;
   }) => api.put(`/produits/${id}`, data),
@@ -99,7 +98,6 @@ export const paiementsAPI = {
   getByClient: (clientId: string) => api.get(`/paiements/client/${clientId}`),
   remove: (id: string) => api.delete(`/paiements/${id}`),
 };
-
 
 // 👤 Clients
 export const clientsAPI = {
@@ -165,6 +163,5 @@ export const commandesAPI = {
 
   remove: (id: string) => api.delete(`/commandes/${id}`)
 };
-
 
 export default api;

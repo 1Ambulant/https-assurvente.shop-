@@ -49,7 +49,7 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
       title: "Produits",
       href: "/dashboard/produits",
       icon: Box,
-      roles: ["admin", "client"],
+      roles: ["admin", "client", "partenaire"],
     },
     {
       title: "Mes Commandes",
@@ -67,7 +67,7 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
       title: "Clients",
       href: "/dashboard/clients",
       icon: Users,
-      roles: ["admin"],
+      roles: ["admin", "partenaire"],
     },
     {
       title: "Commandes",

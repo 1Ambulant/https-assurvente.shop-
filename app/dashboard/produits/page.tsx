@@ -41,88 +41,6 @@ interface Produit {
   marque: string
 }
 
-const produitsData = [
-  {
-    id: "PROD-001",
-    nom: "Réfrigérateur Samsung Side by Side",
-    image: "/placeholder.svg?height=40&width=40",
-    prix: "450,000 XOF",
-    statut: "en stock",
-    categorie: "Réfrigérateurs",
-    marque: "Samsung",
-    stock: 15,
-  },
-  {
-    id: "PROD-002",
-    nom: "Machine à laver LG 8kg",
-    image: "/placeholder.svg?height=40&width=40",
-    prix: "325,000 XOF",
-    statut: "en stock",
-    categorie: "Machines à laver",
-    marque: "LG",
-    stock: 8,
-  },
-  {
-    id: "PROD-003",
-    nom: "Climatiseur Daikin Inverter",
-    image: "/placeholder.svg?height=40&width=40",
-    prix: "275,000 XOF",
-    statut: "en stock",
-    categorie: "Climatiseurs",
-    marque: "Daikin",
-    stock: 12,
-  },
-  {
-    id: "PROD-004",
-    nom: "Cuisinière à gaz Bosch 4 feux",
-    image: "/placeholder.svg?height=40&width=40",
-    prix: "185,000 XOF",
-    statut: "rupture",
-    categorie: "Cuisinières",
-    marque: "Bosch",
-    stock: 0,
-  },
-  {
-    id: "PROD-005",
-    nom: "Micro-ondes Panasonic",
-    image: "/placeholder.svg?height=40&width=40",
-    prix: "95,000 XOF",
-    statut: "en stock",
-    categorie: "Micro-ondes",
-    marque: "Panasonic",
-    stock: 20,
-  },
-  {
-    id: "PROD-006",
-    nom: "Lave-vaisselle Whirlpool",
-    image: "/placeholder.svg?height=40&width=40",
-    prix: "375,000 XOF",
-    statut: "en stock",
-    categorie: "Lave-vaisselles",
-    marque: "Whirlpool",
-    stock: 5,
-  },
-  {
-    id: "PROD-007",
-    nom: "Congélateur Haier 300L",
-    image: "/placeholder.svg?height=40&width=40",
-    prix: "295,000 XOF",
-    statut: "rupture",
-    categorie: "Congélateurs",
-    marque: "Haier",
-    stock: 0,
-  },
-  {
-    id: "PROD-008",
-    nom: "Four électrique Moulinex",
-    image: "/placeholder.svg?height=40&width=40",
-    prix: "125,000 XOF",
-    statut: "en stock",
-    categorie: "Fours",
-    marque: "Moulinex",
-    stock: 10,
-  },
-]
 
 export default function ProduitsPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -202,7 +120,6 @@ export default function ProduitsPage() {
             <TableRow>
               <TableHead>Produit</TableHead>
               <TableHead>Prix</TableHead>
-              <TableHead>Stock</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -227,7 +144,6 @@ export default function ProduitsPage() {
                     </div>
                   </TableCell>
                   <TableCell>{produit.prix.toLocaleString()} XOF</TableCell>
-                  <TableCell>{produit.stock}</TableCell>
                   <TableCell>
                     <Badge
                       variant={produit.statut === "en stock" ? "default" : "secondary"}

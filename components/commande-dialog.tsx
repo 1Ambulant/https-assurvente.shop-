@@ -34,20 +34,24 @@ export function CommandeDialog({ produit }: { produit: { _id: string, nom: strin
       return
     }
 
-    const commande = {
-      produitId: produit._id,
-      clientId,
-      quantite,
-      montantTotal: prixTotal(),
-      paiementEchelonne: echelonne,
-      commande: produit.nom,
-      statut: "preparation" as "preparation",
-      paiement: "attente" as "attente",
-      dateCommande: new Date().toISOString(),
-      nombreEcheances: mois,
-    }
-
     try {
+      // Récupérer les informations du profil
+      const response = await fetch(`/api/profil/client/${clientId}`)
+      const profilData = await response.json()
+
+      const commande = {
+        produitId: produit._id,
+        clientId,
+        quantite,
+        montantTotal: prixTotal(),
+        paiementEchelonne: echelonne,
+        commande: `${profilData.prenom} ${profilData.nom} - ${produit.nom}`,
+        statut: "preparation" as "preparation",
+        paiement: "attente" as "attente",
+        dateCommande: new Date().toISOString(),
+        nombreEcheances: mois,
+      }
+
       await commandesAPI.create(commande)
       setOpen(false)
       alert("Commande enregistrée !")
