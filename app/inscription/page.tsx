@@ -211,9 +211,6 @@ export default function Inscription() {
                 value={clientData.motDePasse}
                 onChange={(e) => setClientData({ ...clientData, motDePasse: e.target.value })}
               />
-              <p className="mt-1 text-sm text-gray-500">
-                Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial
-              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Confirmer le mot de passe</label>
@@ -311,9 +308,6 @@ export default function Inscription() {
                 value={partenaireData.motDePasse}
                 onChange={(e) => setPartenaireData({ ...partenaireData, motDePasse: e.target.value })}
               />
-              <p className="mt-1 text-sm text-gray-500">
-                Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial
-              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Confirmer le mot de passe</label>

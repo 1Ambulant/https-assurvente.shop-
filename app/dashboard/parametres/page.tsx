@@ -93,16 +93,6 @@ export default function ParametresPage() {
               <CardDescription>Mettez à jour vos informations personnelles.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex flex-col md:flex-row gap-4 items-start">
-                <Avatar className="w-24 h-24">
-                  <AvatarImage src="/placeholder-user.jpg" alt="Photo de profil" />
-                  <AvatarFallback>JD</AvatarFallback>
-                </Avatar>
-                <div className="space-y-2">
-                  <Button variant="outline" size="sm">Changer la photo</Button>
-                  <p className="text-sm text-muted-foreground">JPG, GIF ou PNG. 1MB maximum.</p>
-                </div>
-              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">

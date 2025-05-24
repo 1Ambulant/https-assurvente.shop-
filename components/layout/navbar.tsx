@@ -31,10 +31,6 @@ export function Navbar({ setIsMobileMenuOpen }: NavbarProps) {
             <span className="sr-only">Ouvrir le menu</span>
           </Button>
 
-          <div className="relative hidden md:flex items-center">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input type="search" placeholder="Rechercher..." className="pl-10 w-64 bg-gray-50 focus-visible:bg-white" />
-          </div>
         </div>
 
         <div className="flex items-center gap-4">

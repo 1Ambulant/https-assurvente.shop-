@@ -44,16 +44,12 @@ export default function DashboardPage() {
           commandesAPI.getAll(),
         ])
 
-        console.log(commandesRes.data);
+        console.log(commandesPasseeRes.data);
 
-        const ventesTotal = commandesRes.data.reduce((total: number, produit: any) => {
-          return total + (produit.prix || 0)
-        }, 0)
-
-        console.log(clientsRes.data);
+        const total = commandesPasseeRes.data.reduce((sum: number, commande: any) => sum + commande.montantTotal, 0)
 
         setStats({
-          ventesTotal,
+          ventesTotal: total,
           clients: clientsRes.data.length,
           commandes: commandesRes.data.length,
           partenaires: partenairesRes.data.length,
@@ -79,7 +75,7 @@ export default function DashboardPage() {
       <Tabs defaultValue="apercu" className="space-y-4">
         <TabsContent value="apercu" className="space-y-4">
           {/* Statistiques principales */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Ventes totales</CardTitle>
@@ -98,37 +94,17 @@ export default function DashboardPage() {
                 <div className="text-2xl font-bold">{stats.clients}</div>
               </CardContent>
             </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Commandes en cours</CardTitle>
-                <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.commandes}</div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Historique */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          <div className="grid gap-4 ">
             <Card className="col-span-4">
               <CardHeader>
-                <CardTitle>Ventes récentes</CardTitle>
-                <CardDescription>Historique des dernières ventes</CardDescription>
+                <CardTitle>Commandes récentes</CardTitle>
+                <CardDescription>Historique des dernières commandes</CardDescription>
               </CardHeader>
               <CardContent>
                 <VentesRecentes />
-              </CardContent>
-            </Card>
-
-            <Card className="col-span-3">
-              <CardHeader>
-                <CardTitle>Commandes récentes</CardTitle>
-                <CardDescription>Commandes en cours de traitement</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <CommandesRecentes />
               </CardContent>
             </Card>
           </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Badge } from "@/components/ui/badge"
-import { ventesAPI } from "@/lib/api"
+import { commandesAPI } from "@/lib/api"
 
 interface Vente {
   _id: string
@@ -19,7 +19,7 @@ export function VentesRecentes() {
   useEffect(() => {
     const fetchVentes = async () => {
       try {
-        const res = await ventesAPI.getAll()
+        const res = await commandesAPI.getAll()
         setVentes(res.data)
 
       } catch (error) {

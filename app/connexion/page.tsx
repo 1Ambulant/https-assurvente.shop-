@@ -131,10 +131,22 @@ export default function ConnexionPage() {
                 </Label>
               </div>
 
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={loading}>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
                 {loading ? "Connexion en cours..." : "Se connecter"}
-              </Button>
+              </button>
               {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+              <div className="text-center mt-4">
+                <p className="text-sm text-gray-600">
+                  Pas encore de compte ?{" "}
+                  <Link href="/inscription" className="text-blue-600 hover:text-blue-700 font-medium">
+                    S'inscrire
+                  </Link>
+                </p>
+              </div>
             </form>
 
           </CardContent>

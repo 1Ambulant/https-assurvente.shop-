@@ -74,6 +74,8 @@ export default function CommandesPage() {
   const [nombreEcheances, setNombreEcheances] = useState(1)
   const [commandeAEditer, setCommandeAEditer] = useState<Commande | null>(null)
 
+  const [ventesTotal, setVentesTotal] = useState(0)
+
   useEffect(() => {
     const fetchAll = async () => {
       const [cmdRes, prodRes, clientRes] = await Promise.all([
@@ -84,6 +86,10 @@ export default function CommandesPage() {
       setCommandes(cmdRes.data)
       setProduits(prodRes.data)
       setClients(clientRes.data)
+
+      // Calculer la somme totale des ventes
+      const total = cmdRes.data.reduce((sum, commande) => sum + commande.montantTotal, 0)
+      setVentesTotal(total)
     }
     fetchAll()
   }, [])
@@ -166,6 +172,9 @@ export default function CommandesPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Commandes</h1>
           <p className="text-muted-foreground">Gérez les ventes de vos clients.</p>
+        </div>
+        <div className="text-right">
+          <p className="text-lg font-semibold">Total des ventes : {ventesTotal.toLocaleString()} XOF</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>

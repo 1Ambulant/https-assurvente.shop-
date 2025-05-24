@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email déjà utilisé" }, { status: 400 });
     }
 
-    const hashedPassword = await bcrypt.hash("password", 10);
+    const hashedPassword = await bcrypt.hash(body.motDePasse || "password", 10);
     const result = await db.collection("clients").insertOne({
       ...body,
       motDePasse: hashedPassword,
