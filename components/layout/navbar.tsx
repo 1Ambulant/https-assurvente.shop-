@@ -12,12 +12,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { useRouter } from "next/navigation"
 
 interface NavbarProps {
   setIsMobileMenuOpen: (open: boolean) => void
 }
 
 export function Navbar({ setIsMobileMenuOpen }: NavbarProps) {
+  const router = useRouter()
 
   const nom = typeof window !== "undefined" ? localStorage.getItem("nom") || "?" : "?"
   const initiale = nom.charAt(0).toUpperCase()
@@ -46,11 +48,7 @@ export function Navbar({ setIsMobileMenuOpen }: NavbarProps) {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profil</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/dashboard/parametres')}>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Paramètres</span>
               </DropdownMenuItem>
