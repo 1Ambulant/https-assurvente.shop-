@@ -17,7 +17,6 @@ import {
 import { CreditCard, Filter, MoreHorizontal, Search } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { paiementsAPI, commandesAPI } from "@/lib/api"
 
 export default function PaiementsPage() {
@@ -156,7 +155,7 @@ export default function PaiementsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="statut">Statut</Label>
                   <Select value={statut} onValueChange={setStatut}>
@@ -164,6 +163,7 @@ export default function PaiementsPage() {
                       <SelectValue placeholder="Sélectionnez un statut" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="en-cours">En cours</SelectItem>
                       <SelectItem value="complete">Complété</SelectItem>
                       <SelectItem value="attente">En attente</SelectItem>
                       <SelectItem value="annule">Annulé</SelectItem>

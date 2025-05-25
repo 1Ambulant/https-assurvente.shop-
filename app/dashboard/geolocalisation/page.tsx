@@ -222,6 +222,10 @@ export default function GeolocalisationPage() {
         }}
       >
         <TabsList>
+          <TabsTrigger value="produits">
+            <Package className="mr-2 h-4 w-4" />
+            Produits
+          </TabsTrigger>
           <TabsTrigger value="livreurs">
             <Truck className="mr-2 h-4 w-4" />
             Livreurs
@@ -230,90 +234,7 @@ export default function GeolocalisationPage() {
             <Store className="mr-2 h-4 w-4" />
             Magasins
           </TabsTrigger>
-          <TabsTrigger value="produits">
-            <Package className="mr-2 h-4 w-4" />
-            Produits
-          </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="clients" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2">
-              <Card className="h-[500px] relative">
-                <CardHeader>
-                  <CardTitle>Carte des clients</CardTitle>
-                  <CardDescription>Visualisez la répartition géographique de vos clients.</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="h-[400px] bg-gray-100 flex items-center justify-center relative">
-                    {/* Carte simulée avec des points représentant les clients */}
-                    <div className="absolute inset-0">
-                      <div className="absolute top-[30%] left-[40%]">
-                        <div className="h-4 w-4 bg-blue-600 rounded-full animate-pulse"></div>
-                      </div>
-                      <div className="absolute top-[45%] left-[60%]">
-                        <div className="h-4 w-4 bg-blue-600 rounded-full animate-pulse"></div>
-                      </div>
-                      <div className="absolute top-[55%] left-[35%]">
-                        <div className="h-4 w-4 bg-blue-600 rounded-full animate-pulse"></div>
-                      </div>
-                      <div className="absolute top-[25%] left-[55%]">
-                        <div className="h-4 w-4 bg-gray-400 rounded-full animate-pulse"></div>
-                      </div>
-                      <div className="absolute top-[60%] left-[50%]">
-                        <div className="h-4 w-4 bg-blue-600 rounded-full animate-pulse"></div>
-                      </div>
-                    </div>
-                    <div className="text-center z-10 bg-white/80 p-4 rounded-lg">
-                      <MapPin className="h-12 w-12 mx-auto text-blue-600" />
-                      <p className="mt-2 text-gray-500">Carte interactive</p>
-                      <p className="text-sm text-gray-400">Affichage des {activeTab}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div>
-              <Card className="h-[500px]">
-                <CardHeader>
-                  <CardTitle>Liste des clients</CardTitle>
-                  <CardDescription>Clients à proximité</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4 overflow-auto max-h-[380px]">
-                  {filteredClients.length > 0 ? (
-                    filteredClients.map((client) => (
-                      <div key={client.id} className="flex items-start gap-3 p-3 border rounded-md">
-                        <Avatar className="h-9 w-9">
-                          <AvatarFallback className="bg-blue-100 text-blue-600">{client.initiales}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <h3 className="font-medium">{client.nom}</h3>
-                          <p className="text-sm text-gray-500">{client.adresse}</p>
-                          <div className="flex items-center justify-between mt-1">
-                            <p className="text-xs text-gray-400">À {client.distance} km</p>
-                            <Badge
-                              variant={client.status === "actif" ? "default" : "secondary"}
-                              className={client.status === "actif" ? "bg-green-500" : "bg-gray-500"}
-                            >
-                              {client.status}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-8">
-                      <Search className="h-8 w-8 text-gray-400 mb-2" />
-                      <h3 className="text-lg font-medium">Aucun client trouvé</h3>
-                      <p className="text-sm text-gray-500">Essayez de modifier vos critères de recherche.</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
 
         <TabsContent value="livreurs" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

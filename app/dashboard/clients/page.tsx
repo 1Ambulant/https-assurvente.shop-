@@ -81,17 +81,6 @@ export default function ClientsPage() {
     e.preventDefault()
     setLoading(true)
 
-    console.log("Ajout d'un client :", {
-      nom,
-      prenom,
-      email,
-      telephone,
-      adresse,
-      ville,
-      pays,
-      type,
-    })
-
     try {
       await clientsAPI.create({
         nom,
@@ -250,9 +239,6 @@ export default function ClientsPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button variant="outline" size="sm">
-          <Filter className="mr-2 h-4 w-4" /> Filtrer
-        </Button>
       </div>
 
       <div className="border rounded-md">

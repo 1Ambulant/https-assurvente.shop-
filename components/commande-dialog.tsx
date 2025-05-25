@@ -17,15 +17,24 @@ export function CommandeDialog({ produit }: { produit: { _id: string, nom: strin
   const [echelonne, setEchelonne] = useState(false)
   const [mois, setMois] = useState(0)
 
+  const getTauxEchelonnement = (montant: number) => {
+    if (montant <= 150000) return 0.10; // +10%
+    if (montant <= 300000) return 0.075; // +7.5%
+    if (montant <= 500000) return 0.05; // +5%
+    if (montant <= 750000) return 0.035;
+
+    
+    return 0.025; // +2.5%
+  }
 
   const prixTotal = () => {
     let prix = produit.prix * quantite
     if (echelonne && mois > 0) {
-      prix *= Math.pow(1.05, mois)
+      const taux = getTauxEchelonnement(prix);
+      prix *= (1 + taux);
     }
     return Math.round(prix)
   }
-
 
   const commander = async () => {
     const clientId = localStorage.getItem("id")
@@ -100,7 +109,7 @@ export function CommandeDialog({ produit }: { produit: { _id: string, nom: strin
                 />
               </div>
             )}
-            <Label htmlFor="echelonne">Payer en échelonné (+5%)</Label>
+            <Label htmlFor="echelonne">Payer en échelonné</Label>
           </div>
           <div className="font-semibold">
             Prix total : {prixTotal().toLocaleString()} XOF

@@ -40,16 +40,16 @@ export default function MesCommandesPage() {
             <TableHead>Quantité</TableHead>
             <TableHead>Prix Total</TableHead>
             <TableHead>Nombre de mois</TableHead>
-            <TableHead>Versement initial (40%)</TableHead>
+            <TableHead>Versement initial (50%)</TableHead>
             <TableHead>Paiement mensuel</TableHead>
             <TableHead>Statut</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {commandes.map((c) => {
-            const acompte = arrondir5(c.montantTotal * 0.4);
+            const acompte = arrondir5(c.montantTotal * 0.5);
             const mensualite = c.nombreEcheances && c.nombreEcheances > 1
-              ? arrondir5((c.montantTotal * 0.6) / c.nombreEcheances)
+              ? arrondir5((c.montantTotal - acompte) / c.nombreEcheances)
               : 0;
             return (
               <TableRow key={c._id}>

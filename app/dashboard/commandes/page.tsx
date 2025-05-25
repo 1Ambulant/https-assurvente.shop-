@@ -58,6 +58,7 @@ export interface Commande {
 export default function CommandesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [dialogType, setDialogType] = useState<"add" | "edit">("add")
   const [loading, setLoading] = useState(false)
   const [commande, setCommande] = useState<string>("")
 
@@ -76,6 +77,33 @@ export default function CommandesPage() {
 
   const [ventesTotal, setVentesTotal] = useState(0)
 
+  const getTauxEchelonnement = (montant: number) => {
+    if (montant <= 150000) return 0.10; // +10%
+    if (montant <= 300000) return 0.075; // +7.5%
+    if (montant <= 500000) return 0.05; // +5%
+    if (montant <= 750000) return 0.035; // +3.5%
+    return 0.025; // +2.5%
+  }
+
+  const resetForm = () => {
+    setClientId("")
+    setProduitId("")
+    setQuantite(1)
+    setPaiement("attente")
+    setStatut("preparation")
+    setPaiementEchelonne(false)
+    setNombreEcheances(1)
+    setCommandeAEditer(null)
+  }
+
+  const handleOpenDialog = (type: "add" | "edit") => {
+    setDialogType(type)
+    if (type === "add") {
+      resetForm()
+    }
+    setDialogOpen(true)
+  }
+
   useEffect(() => {
     const fetchAll = async () => {
       const [cmdRes, prodRes, clientRes] = await Promise.all([
@@ -88,7 +116,7 @@ export default function CommandesPage() {
       setClients(clientRes.data)
 
       // Calculer la somme totale des ventes
-      const total = cmdRes.data.reduce((sum, commande) => sum + commande.montantTotal, 0)
+      const total = cmdRes.data.reduce((sum: any, commande: { montantTotal: any }) => sum + commande.montantTotal, 0)
       setVentesTotal(total)
     }
     fetchAll()
@@ -103,7 +131,7 @@ export default function CommandesPage() {
       setStatut(commandeAEditer.statut)
       setPaiementEchelonne(commandeAEditer.paiementEchelonne || false)
       setNombreEcheances(commandeAEditer.nombreEcheances || 1)
-      setDialogOpen(true)
+      handleOpenDialog("edit")
     }
   }, [commandeAEditer])
 
@@ -119,11 +147,11 @@ export default function CommandesPage() {
       return
     }
 
-    let montant = produit.prix * quantite
+    let montant = produit.prix * quantite;
 
     if (paiementEchelonne && nombreEcheances > 1) {
-      const tauxMajoration = 0.05
-      montant *= 1 + tauxMajoration * nombreEcheances
+      const taux = getTauxEchelonnement(montant);
+      montant *= (1 + taux);
     }
 
     const nouvelleCommande: Omit<Commande, "_id"> & { commande: string } = {
@@ -133,7 +161,7 @@ export default function CommandesPage() {
       montantTotal: Math.round(montant),
       paiement,
       statut,
-      dateCommande: new Date().toISOString(),
+      dateCommande: commandeAEditer?.dateCommande || new Date().toISOString(),
       paiementEchelonne,
       ...(paiementEchelonne ? { nombreEcheances } : {}),
       commande: `${client.prenom} ${client.nom} - ${produit.nom}`,
@@ -153,6 +181,14 @@ export default function CommandesPage() {
 
       setDialogOpen(false)
       setCommandeAEditer(null)
+      // Réinitialiser les champs du formulaire
+      setClientId("")
+      setProduitId("")
+      setQuantite(1)
+      setPaiement("attente")
+      setStatut("preparation")
+      setPaiementEchelonne(false)
+      setNombreEcheances(1)
     } catch (err) {
       console.error("Erreur:", err)
       alert("Erreur lors de l'enregistrement.")
@@ -176,22 +212,29 @@ export default function CommandesPage() {
         <div className="text-right">
           <p className="text-lg font-semibold">Total des ventes : {ventesTotal.toLocaleString()} XOF</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          setDialogOpen(open)
+          if (!open) {
+            resetForm()
+          }
+        }}>
           <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
+            <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => handleOpenDialog("add")}>
               <ShoppingBag className="mr-2 h-4 w-4" /> Ajouter une commande
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Ajouter une nouvelle commande</DialogTitle>
-              <DialogDescription>Remplissez les informations nécessaires.</DialogDescription>
+              <DialogTitle>{dialogType === "add" ? "Ajouter une nouvelle commande" : "Modifier la commande"}</DialogTitle>
+              <DialogDescription>
+                {dialogType === "add" ? "Remplissez les informations nécessaires." : "Modifiez les informations de la commande."}
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleAddCommande}>
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
                   <Label>Client</Label>
-                  <Select onValueChange={setClientId}>
+                  <Select value={clientId} onValueChange={setClientId}>
                     <SelectTrigger><SelectValue placeholder="Sélectionnez un client" /></SelectTrigger>
                     <SelectContent>
                       {clients.map(client => (
@@ -203,7 +246,7 @@ export default function CommandesPage() {
 
                 <div className="space-y-2">
                   <Label>Produit</Label>
-                  <Select onValueChange={setProduitId}>
+                  <Select value={produitId} onValueChange={setProduitId}>
                     <SelectTrigger><SelectValue placeholder="Sélectionnez un produit" /></SelectTrigger>
                     <SelectContent>
                       {produits.map(produit => (
@@ -234,7 +277,7 @@ export default function CommandesPage() {
 
                 <div className="space-y-2">
                   <Label>Paiement</Label>
-                  <Select defaultValue="attente" onValueChange={v => setPaiement(v as Commande["paiement"])}>
+                  <Select value={paiement} onValueChange={v => setPaiement(v as Commande["paiement"])}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="attente">En attente</SelectItem>
@@ -246,7 +289,7 @@ export default function CommandesPage() {
               </div>
               <div className="space-y-2">
                 <Label>Paiement échelonné ?</Label>
-                <Select onValueChange={(v) => setPaiementEchelonne(v === "oui")}>
+                <Select value={paiementEchelonne ? "oui" : "non"} onValueChange={(v) => setPaiementEchelonne(v === "oui")}>
                   <SelectTrigger>
                     <SelectValue placeholder="Choisissez une option" />
                   </SelectTrigger>
@@ -349,7 +392,6 @@ export default function CommandesPage() {
                       <DropdownMenuItem
                         onClick={() => {
                           setCommandeAEditer(commande);
-                          setDialogOpen(true);
                         }}
                       >
                         Modifier

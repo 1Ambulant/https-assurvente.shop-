@@ -94,11 +94,13 @@ export default function ProduitsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Produits</h1>
           <p className="text-muted-foreground">Gérez votre catalogue de produits électroménagers.</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700" asChild>
-          <Link href="/dashboard/produits/ajouter">
-            <Plus className="mr-2 h-4 w-4" /> Ajouter un produit
-          </Link>
-        </Button>
+        {typeof window !== "undefined" && localStorage.getItem("role") == "admin" && (
+          <Button className="bg-blue-600 hover:bg-blue-700" asChild>
+            <Link href="/dashboard/produits/ajouter">
+              <Plus className="mr-2 h-4 w-4" /> Ajouter un produit
+            </Link>
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
