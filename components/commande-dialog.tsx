@@ -16,6 +16,8 @@ export function CommandeDialog({ produit }: { produit: { _id: string, nom: strin
   const [quantite, setQuantite] = useState(1)
   const [echelonne, setEchelonne] = useState(false)
   const [mois, setMois] = useState(0)
+  const [showCGUV, setShowCGUV] = useState(false)
+  const [cguvAccepted, setCguvAccepted] = useState(false)
 
   const getTauxEchelonnement = (montant: number) => {
     if (montant <= 150000) return 0.10; // +10%
@@ -31,12 +33,23 @@ export function CommandeDialog({ produit }: { produit: { _id: string, nom: strin
     let prix = produit.prix * quantite
     if (echelonne && mois > 0) {
       const taux = getTauxEchelonnement(prix);
-      prix *= (1 + taux);
+      // La marge est appliquée sur le montant total en fonction du nombre de mois
+      prix *= (1 + (taux * mois));
     }
     return Math.round(prix)
   }
 
+  const montantMensuel = () => {
+    if (!echelonne || mois <= 0) return 0;
+    return Math.round(prixTotal() / mois);
+  }
+
   const commander = async () => {
+    if (!cguvAccepted) {
+      setShowCGUV(true)
+      return
+    }
+
     const clientId = localStorage.getItem("id")
     if (!clientId) {
       alert("Utilisateur non identifié.")
@@ -114,11 +127,58 @@ export function CommandeDialog({ produit }: { produit: { _id: string, nom: strin
           <div className="font-semibold">
             Prix total : {prixTotal().toLocaleString()} XOF
           </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="cguv"
+              checked={cguvAccepted}
+              onCheckedChange={(checked) => setCguvAccepted(checked === true)}
+            />
+            <Label htmlFor="cguv" className="text-sm">
+              J'accepte les <button type="button" onClick={() => setShowCGUV(true)} className="text-blue-600 hover:underline">conditions générales d'utilisation et de vente</button>
+            </Label>
+          </div>
         </div>
         <DialogFooter>
-          <Button onClick={commander}>Valider la commande</Button>
+          <Button onClick={commander} disabled={!cguvAccepted}>Valider la commande</Button>
         </DialogFooter>
       </DialogContent>
+
+      <Dialog open={showCGUV} onOpenChange={setShowCGUV}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-white border border-gray-200 shadow-lg">
+          <DialogHeader className="bg-white">
+            <DialogTitle className="text-xl font-bold text-gray-900">Conditions Générales d'Utilisation et de Vente</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 text-gray-800 bg-white">
+            <h3 className="font-semibold text-lg">1. Objet</h3>
+            <p>Les présentes conditions générales d'utilisation et de vente (CGUV) régissent les ventes de produits de notre site.</p>
+
+            <h3 className="font-semibold text-lg">2. Prix</h3>
+            <p>Les prix de nos produits sont indiqués en FCFA toutes taxes comprises (TTC).</p>
+
+            <h3 className="font-semibold text-lg">3. Paiement</h3>
+            <p>Le fait de valider votre commande implique pour vous l'acceptation de l'ensemble des présentes conditions.</p>
+
+            <h3 className="font-semibold text-lg">4. Paiement échelonné</h3>
+            <p>En cas de paiement échelonné, des frais supplémentaires seront appliqués selon les tranches suivantes :</p>
+            <ul className="list-disc pl-6 space-y-1">
+              <li>Jusqu'à 150.000 FCFA : +10%</li>
+              <li>De 150.100 à 300.000 FCFA : +7.5%</li>
+              <li>De 301.000 à 500.000 FCFA : +5%</li>
+              <li>De 501.000 à 750.000 FCFA : +3.5%</li>
+              <li>Au-delà de 750.000 FCFA : +2.5%</li>
+            </ul>
+
+            <h3 className="font-semibold text-lg">5. Livraison</h3>
+            <p>Les délais de livraison sont donnés à titre indicatif. Nous ne pourrons être tenus responsables des conséquences dues à un retard de livraison.</p>
+          </div>
+          <DialogFooter className="bg-white">
+            <Button onClick={() => {
+              setShowCGUV(false)
+              setCguvAccepted(true)
+            }}>J'accepte les conditions</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   )
 }
