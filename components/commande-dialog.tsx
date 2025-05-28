@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { commandesAPI } from "@/lib/api";
+import { commandesAPI, paiementsAPI } from "@/lib/api";
 
 export function CommandeDialog({ produit }: { produit: { _id: string, nom: string, prix: number } }) {
   const [open, setOpen] = useState(false)
@@ -25,7 +25,7 @@ export function CommandeDialog({ produit }: { produit: { _id: string, nom: strin
     if (montant <= 500000) return 0.05; // +5%
     if (montant <= 750000) return 0.035;
 
-    
+
     return 0.025; // +2.5%
   }
 
@@ -44,6 +44,8 @@ export function CommandeDialog({ produit }: { produit: { _id: string, nom: strin
     return Math.round(prixTotal() / mois);
   }
 
+  
+
   const commander = async () => {
     if (!cguvAccepted) {
       setShowCGUV(true)
@@ -61,20 +63,60 @@ export function CommandeDialog({ produit }: { produit: { _id: string, nom: strin
       const response = await fetch(`/api/profil/client/${clientId}`)
       const profilData = await response.json()
 
+      const prixUnitaire = produit.prix * quantite;
+      let montantTotal = prixUnitaire;
+      
+      if (echelonne && mois > 0) {
+        const taux = getTauxEchelonnement(prixUnitaire);
+        montantTotal = Math.round(prixUnitaire * (1 + taux * mois));
+      }
+      
+      const acompte = Math.round(montantTotal * 0.5);
+      const resteAPayer = montantTotal;
+      const _montantMensuel = echelonne && mois > 0 ? Math.round(montantTotal / mois) : 0;      
+
       const commande = {
         produitId: produit._id,
         clientId,
         quantite,
-        montantTotal: prixTotal(),
+        montantTotal,
         paiementEchelonne: echelonne,
         commande: `${profilData.prenom} ${profilData.nom} - ${produit.nom}`,
         statut: "preparation" as "preparation",
         paiement: "attente" as "attente",
         dateCommande: new Date().toISOString(),
         nombreEcheances: mois,
+        acompteInitial: acompte,
       }
 
-      await commandesAPI.create(commande)
+      // Créer la commande
+      const commandeRes = await commandesAPI.create(commande);
+
+      // Créer le paiement initial
+      const paiementInitial = {
+        commandeId: commandeRes.data._id,
+        clientId,
+        commande: `${profilData.prenom} ${profilData.nom} - ${produit.nom}`,
+        montantInitial: montantTotal,
+        montantPaye: 0,
+        paiementInitial: acompte,
+        resteAPayer,
+        datePaiement: new Date().toISOString(),
+        statut: "en_cours" as "en_cours",
+        type: (echelonne ? "echelonne" : "unique") as "echelonne" | "unique",
+        echeances: echelonne
+          ? Array(mois).fill(null).map((_, index) => ({
+              numero: index + 1,
+              montant: Math.round((montantTotal - acompte) / mois),
+              dateEcheance: new Date(Date.now() + (index + 1) * 30 * 24 * 60 * 60 * 1000).toISOString(),
+              statut: "en_attente" as "en_attente",
+              montantPaye: 0,
+            }))
+          : [],
+      };
+
+      await paiementsAPI.create(paiementInitial);
+
       setOpen(false)
       alert("Commande enregistrée !")
     } catch (err) {

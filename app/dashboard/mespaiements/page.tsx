@@ -1,7 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table, TableBody, TableCell, TableHead,
+  TableHeader, TableRow
+} from "@/components/ui/table";
 import { paiementsAPI } from "@/lib/api";
 
 export default function MesPaiementsPage() {
@@ -10,9 +13,9 @@ export default function MesPaiementsPage() {
 
   useEffect(() => {
     const id = localStorage.getItem("id");
+    console.log("Client ID:", id);
     if (id) {
       setClientId(id);
-      console.log("Client ID:", id);
     }
   }, []);
 
@@ -21,7 +24,6 @@ export default function MesPaiementsPage() {
     paiementsAPI.getByClient(clientId)
       .then(res => {
         setPaiements(res.data);
-        console.log("Paiements:", res.data);
       })
       .catch(err => console.error("Erreur chargement paiements:", err));
   }, [clientId]);
@@ -35,9 +37,10 @@ export default function MesPaiementsPage() {
         <TableHeader>
           <TableRow>
             <TableHead>Date</TableHead>
-            <TableHead>Montant</TableHead>
-            <TableHead>Commande</TableHead>
-            <TableHead>Moyen</TableHead>
+            <TableHead>Montant total</TableHead>
+            <TableHead>Montant payé</TableHead>
+            <TableHead>Reste à payer</TableHead>
+            <TableHead>Type</TableHead>
             <TableHead>Statut</TableHead>
           </TableRow>
         </TableHeader>
@@ -45,10 +48,11 @@ export default function MesPaiementsPage() {
           {paiements.map((p) => (
             <TableRow key={p._id}>
               <TableCell>{new Date(p.datePaiement).toLocaleDateString()}</TableCell>
-              <TableCell>{p.montant.toLocaleString()} XOF</TableCell>
-              <TableCell>{p.commande}</TableCell>
-              <TableCell>{p.moyenPaiement}</TableCell>
-              <TableCell>{p.statut}</TableCell>
+              <TableCell>{p.montantInitial.toLocaleString()} XOF</TableCell>
+              <TableCell>{p.montantPaye.toLocaleString()} XOF</TableCell>
+              <TableCell>{p.resteAPayer.toLocaleString()} XOF</TableCell>
+              <TableCell>{p.type === "echelonne" ? "Échelonné" : "Unique"}</TableCell>
+              <TableCell>{p.statut === "acompte" ? "Acompte" : p.statut === "en_cours" ? "En cours" : "Terminé"}</TableCell>
             </TableRow>
           ))}
         </TableBody>

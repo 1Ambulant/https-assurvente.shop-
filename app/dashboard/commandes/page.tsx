@@ -190,17 +190,26 @@ export default function CommandesPage() {
       setPaiementEchelonne(false)
       setNombreEcheances(1)
     } catch (err) {
-      console.error("Erreur:", err)
-      alert("Erreur lors de l'enregistrement.")
     } finally {
       setLoading(false)
     }
   }
 
-  const filteredCommandes = commandes.filter(c =>
-    c.commande?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c._id?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredCommandes = commandes.filter((c) => {
+    const client = clients.find(cl => cl._id === c.clientId);
+    const produit = produits.find(p => p._id === c.produitId);
+
+    const clientNomComplet = client ? `${client.prenom} ${client.nom}`.toLowerCase() : "";
+    const produitNom = produit ? produit.nom.toLowerCase() : "";
+
+    return (
+      c.commande?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c._id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      clientNomComplet.includes(searchTerm.toLowerCase()) ||
+      produitNom.includes(searchTerm.toLowerCase())
+    );
+  });
+
 
   return (
     <div className="space-y-6">
@@ -209,9 +218,6 @@ export default function CommandesPage() {
           <h1 className="text-3xl font-bold tracking-tight">Commandes</h1>
           <p className="text-muted-foreground">Gérez les ventes de vos clients.</p>
         </div>
-        <div className="text-right">
-          <p className="text-lg font-semibold">Total des ventes : {ventesTotal.toLocaleString()} XOF</p>
-        </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => {
           setDialogOpen(open)
           if (!open) {
@@ -219,13 +225,10 @@ export default function CommandesPage() {
           }
         }}>
           <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => handleOpenDialog("add")}>
-              <ShoppingBag className="mr-2 h-4 w-4" /> Ajouter une commande
-            </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{dialogType === "add" ? "Ajouter une nouvelle commande" : "Modifier la commande"}</DialogTitle>
+              <DialogTitle>{dialogType === "add" ? "Nouvelle commande" : "Modifier la commande"}</DialogTitle>
               <DialogDescription>
                 {dialogType === "add" ? "Remplissez les informations nécessaires." : "Modifiez les informations de la commande."}
               </DialogDescription>
@@ -334,9 +337,6 @@ export default function CommandesPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button variant="outline" size="sm">
-          <Filter className="mr-2 h-4 w-4" /> Filtrer
-        </Button>
       </div>
 
       <div className="border rounded-md">

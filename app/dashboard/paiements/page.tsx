@@ -35,6 +35,15 @@ export default function PaiementsPage() {
   const [methode, setMethode] = useState("")
   const [statut, setStatut] = useState("complete")
 
+  const [selectedPaiement, setSelectedPaiement] = useState<any | null>(null)
+  const [editMontant, setEditMontant] = useState("")
+  const [editStatut, setEditStatut] = useState<"en_cours" | "termine">("en_cours")
+
+  const [selectedEcheance, setSelectedEcheance] = useState<number | "acompte" | null>(null);
+  const [montantEcheance, setMontantEcheance] = useState("")
+
+
+
   const fetchPaiements = async () => {
     try {
       const res = await paiementsAPI.getAll()
@@ -59,45 +68,10 @@ export default function PaiementsPage() {
   }, [])
 
   const filteredPaiements = paiements.filter(p =>
-    (p?.commandeId ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p?.moyenPaiement ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p?._id ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p?.commande ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
     (p?.statut ?? "").toLowerCase().includes(searchTerm.toLowerCase())
   )
-
-  const handleAddPaiement = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-
-    const commande = commandes.find((c) => c._id === selectedCommandeId)
-    if (!commande) return
-
-    try {
-      await paiementsAPI.create({
-        commandeId: selectedCommandeId,
-        montant: Number(montant),
-        datePaiement: date,
-        moyenPaiement: methode,
-        statut,
-        commande: commande.commande
-      })
-
-      setSelectedCommandeId("")
-      setMontant("")
-      setDate("")
-      setMethode("")
-      setStatut("complete")
-      setDialogOpen(false)
-      fetchPaiements()
-    } catch (err) {
-      console.error("Erreur ajout paiement", err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (commandes.length > 0) {
-    console.log("Commandes:", commandes)
-  }
 
   return (
     <div className="space-y-6">
@@ -106,80 +80,6 @@ export default function PaiementsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Paiements</h1>
           <p className="text-muted-foreground">Gérez les paiements et les transactions financières.</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <CreditCard className="mr-2 h-4 w-4" /> Enregistrer un paiement
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Enregistrer un nouveau paiement</DialogTitle>
-              <DialogDescription>Remplissez les informations pour enregistrer un nouveau paiement.</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleAddPaiement}>
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="vente">Vente associée</Label>
-                  <Select value={selectedCommandeId} onValueChange={setSelectedCommandeId}>
-                    <SelectTrigger id="vente">
-                      <SelectValue placeholder="Sélectionnez une vente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {commandes.map((c) => (
-                        <SelectItem key={c._id} value={c._id!}>
-                          {c.commande} ({c.montantTotal} XOF)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="montant">Montant (XOF)</Label>
-                  <Input id="montant" type="number" value={montant} onChange={(e) => setMontant(e.target.value)} />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="methode">Méthode de paiement</Label>
-                  <Select value={methode} onValueChange={setMethode}>
-                    <SelectTrigger id="methode">
-                      <SelectValue placeholder="Sélectionnez une méthode" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="carte">Carte bancaire</SelectItem>
-                      <SelectItem value="wave">Wave</SelectItem>
-                      <SelectItem value="mobile">Orange Money</SelectItem>
-                      <SelectItem value="especes">Espèces</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="statut">Statut</Label>
-                  <Select value={statut} onValueChange={setStatut}>
-                    <SelectTrigger id="statut">
-                      <SelectValue placeholder="Sélectionnez un statut" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="en-cours">En cours</SelectItem>
-                      <SelectItem value="complete">Complété</SelectItem>
-                      <SelectItem value="attente">En attente</SelectItem>
-                      <SelectItem value="annule">Annulé</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
-                <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={loading}>
-                  {loading ? "Enregistrement..." : "Enregistrer"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -192,9 +92,6 @@ export default function PaiementsPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button variant="outline" size="sm">
-          <Filter className="mr-2 h-4 w-4" /> Filtrer
-        </Button>
       </div>
 
       <div className="border rounded-md">
@@ -205,63 +102,87 @@ export default function PaiementsPage() {
               <TableHead>Commande</TableHead>
               <TableHead>Montant</TableHead>
               <TableHead>Date</TableHead>
-              <TableHead>Méthode</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredPaiements.length > 0 ? (
-              filteredPaiements.map((p) => (
-                <TableRow key={p._id}>
-                  <TableCell>{p._id}</TableCell>
-                  <TableCell>{p.commande}</TableCell>
-                  <TableCell>{p.montant} XOF</TableCell>
-                  <TableCell>{p.datePaiement}</TableCell>
-                  <TableCell>{p.moyenPaiement}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={p.statut === "complete" ? "default" : p.statut === "attente" ? "outline" : "destructive"}
-                      className={p.statut === "complete" ? "bg-green-500" : p.statut === "attente" ? "bg-yellow-500 text-yellow-800" : ""}
-                    >
-                      {p.statut}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-red-500"
-                          onClick={async () => {
-                            const confirmed = confirm("Voulez-vous vraiment supprimer ce paiement ?");
-                            if (!confirmed || !p._id) return;
+              filteredPaiements.map((p) => {
 
-                            try {
-                              await paiementsAPI.remove(p._id);
-                              alert("Paiement supprimé avec succès.");
-                              fetchPaiements();
-                            } catch (error) {
-                              console.error("Erreur suppression :", error);
-                              alert("Erreur lors de la suppression.");
-                            }
-                          }}
-                        >
-                          Supprimer
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
+                return (
+                  <TableRow key={p._id}>
+                    <TableCell>{p._id}</TableCell>
+                    <TableCell>{p.commande}</TableCell>
+                    <TableCell>
+                      <div>Total : {p.montantInitial.toLocaleString()} XOF</div>
+                      <div className="text-sm text-muted-foreground">Payé : {p.montantPaye.toLocaleString()} XOF</div>
+                      <div className="text-sm text-muted-foreground">Reste : {p.resteAPayer.toLocaleString()} XOF</div>
+                    </TableCell>
+                    <TableCell>{new Date(p.datePaiement).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          p.statut === "termine" ? "default"
+                            : p.statut === "en_cours" ? "secondary"
+                              : "outline"
+                        }
+                        className={
+                          p.statut === "termine" ? "bg-green-500"
+                            : p.statut === "en_cours" ? "bg-yellow-500 text-yellow-900"
+                              : "bg-gray-200 text-gray-800"
+                        }
+                      >
+                        {p.statut === "acompte"
+                          ? "Acompte"
+                          : p.statut === "en_cours"
+                            ? "En cours"
+                            : "Terminé"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setDialogOpen(true)
+                              setSelectedPaiement(p)
+                            }}
+                          >
+                            Modifier
+                          </DropdownMenuItem>
 
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-red-500"
+                            onClick={async () => {
+                              const confirmed = confirm("Voulez-vous vraiment supprimer ce paiement ?");
+                              if (!confirmed || !p._id) return;
+
+                              try {
+                                await paiementsAPI.remove(p._id);
+                                alert("Paiement supprimé avec succès.");
+                                fetchPaiements();
+                              } catch (error) {
+                                console.error("Erreur suppression :", error);
+                                alert("Erreur lors de la suppression.");
+                              }
+                            }}
+                          >
+                            Supprimer
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             ) : (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8">
@@ -270,7 +191,130 @@ export default function PaiementsPage() {
               </TableRow>
             )}
           </TableBody>
+
         </Table>
+
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Modifier le paiement</DialogTitle>
+              <DialogDescription>
+                Mettez à jour le montant payé et le statut de ce paiement.
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedPaiement?.type === "echelonne" && (
+              <>
+                <div>
+                  <Label>Échéance à payer</Label>
+                  <Select
+                    value={selectedEcheance?.toString() ?? ""}
+                    onValueChange={(val) => {
+                      if (val === "acompte") {
+                        setSelectedEcheance("acompte")
+                      } else {
+                        setSelectedEcheance(Number(val))
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choisir une échéance" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {/* 👉 Acompte ajouté ici */}
+                      <SelectItem value="acompte">
+                        Acompte – {selectedPaiement.montantInitial / 2} XOF
+                      </SelectItem>
+
+                      {/* 👉 Échéances en attente ensuite */}
+                      {selectedPaiement.echeances
+                        ?.filter((e: any) => e.statut === "en_attente")
+                        .map((e: any) => (
+                          <SelectItem key={e.numero} value={e.numero.toString()}>
+                            Échéance {e.numero} – {e.montant} XOF – {new Date(e.dateEcheance).toLocaleDateString()}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+
+                  </Select>
+                </div>
+              </>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <Label>Statut</Label>
+                <Select value={editStatut} onValueChange={(val) => setEditStatut(val as "en_cours" | "termine")}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en_cours">En cours</SelectItem>
+                    <SelectItem value="termine">Terminé</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+
+            <DialogFooter>
+              <Button
+                onClick={async () => {
+                  if (!selectedPaiement?._id) return;
+
+                  try {
+                    let montantAuto = 0;
+
+                    if (selectedEcheance === "acompte") {
+                      montantAuto = selectedPaiement.montantInitial / 2;
+                      await paiementsAPI.update(selectedPaiement._id, {
+                        montantPaye: montantAuto,
+                        statut: editStatut,
+                      });
+                    }
+
+                    else if (typeof selectedEcheance === "number") {
+                      const echeance = selectedPaiement.echeances.find(
+                        (e: any) => e.numero === selectedEcheance
+                      );
+                      if (!echeance) throw new Error("Échéance introuvable");
+
+                      montantAuto = echeance.montant;
+                      console.log("montantAuto", montantAuto);
+                      await paiementsAPI.updateEcheance(
+                        selectedPaiement._id,
+                        selectedEcheance,
+                        {
+                          montantPaye: montantAuto,
+                          datePaiement: new Date().toISOString(),
+                          statut: "paye",
+                        }
+                      );
+                    }
+
+                    else {
+                      // Aucun choix, par défaut 0
+                      await paiementsAPI.update(selectedPaiement._id, {
+                        montantPaye: 0,
+                        statut: editStatut,
+                      });
+                    }
+
+                    alert("Paiement mis à jour !");
+                    setDialogOpen(false);
+                    fetchPaiements();
+                  } catch (err) {
+                    console.error("Erreur MAJ :", err);
+                    alert("Erreur lors de la mise à jour.");
+                  }
+                }}
+              >
+                Enregistrer
+              </Button>
+            </DialogFooter>
+
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { mongo } from "@/lib/mongodb";
 import { validateApiKey } from "@/lib/verifyApiKey"
 
@@ -27,6 +27,7 @@ export async function GET(req: Request) {
     try {
         const db = await mongo.connectToDb();
         const paiements = await db.collection("paiements").find().toArray();
+        console.log("paiements", paiements);
         return NextResponse.json(paiements);
     } catch (error) {
         return NextResponse.json({ error: "Erreur chargement paiements" }, { status: 500 });

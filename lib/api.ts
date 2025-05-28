@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://assurvente.shop/api";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://assurvente.shop/api";
+// const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
 
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY || "super-cle-api-123456";
 
@@ -85,18 +85,56 @@ export const ventesAPI = {
 // 💰 Paiements
 export const paiementsAPI = {
   getAll: () => api.get("/paiements"),
+
+  getByClient: (clientId: string) =>
+    api.get(`/paiements/client/${clientId}`),
+
+  getByCommande: (commandeId: string) =>
+    api.get(`/paiements/commande/${commandeId}`),
+
   create: (data: {
     commandeId: string;
-    montant: number;
+    clientId: string;
+    montantInitial: number;
+    montantPaye: number;
+    resteAPayer: number;
     datePaiement: string;
-    moyenPaiement: string;
-    statut: string;
-    commande: string;
+    statut: "en_cours" | "termine";
+    type: "unique" | "echelonne";
+    echeances?: {
+      numero: number;
+      montant: number;
+      dateEcheance: string;
+      statut: "en_attente" | "paye" | "en_retard";
+      montantPaye: number;
+    }[];
   }) => api.post("/paiements", data),
 
-  // 🔍 Paiements spécifiques à un client
-  getByClient: (clientId: string) => api.get(`/paiements/client/${clientId}`),
+  update: (id: string, data: {
+    montantPaye?: number;
+    resteAPayer?: number;
+    statut?: "en_cours" | "termine";
+    type?: "unique" | "echelonne";
+    echeances?: {
+      numero: number;
+      montant: number;
+      dateEcheance: string;
+      statut: "en_attente" | "paye" | "en_retard";
+      montantPaye: number;
+    }[];
+  }) => api.put(`/paiements/${id}`, data),
+
   remove: (id: string) => api.delete(`/paiements/${id}`),
+
+  updateEcheance: (
+    id: string,
+    numeroEcheance: number,
+    data: {
+      montantPaye: number;
+      datePaiement: string;
+      statut: "en_attente" | "paye" | "en_retard";
+    }
+  ) => api.put(`/paiements/${id}/echeance/${numeroEcheance}`, data),
 };
 
 // 👤 Clients
