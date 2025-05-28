@@ -37,6 +37,10 @@ export interface Client {
   email: string
   telephone: string
   type: "Particulier" | "Entreprise"
+  adresse?: string
+  ville?: string
+  pays?: string
+  statut?: "actif" | "inactif"
 }
 
 function getInitials(nom: string, prenom: string): string {
@@ -48,8 +52,10 @@ function getInitials(nom: string, prenom: string): string {
 export default function ClientsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [clients, setClients] = useState<Client[]>([])
+  const [editingClient, setEditingClient] = useState<Client | null>(null)
 
   const [nom, setNom] = useState("")
   const [prenom, setPrenom] = useState("")
@@ -63,8 +69,6 @@ export default function ClientsPage() {
 
   useEffect(() => {
     fetchClients()
-
-
   }, [])
 
   const fetchClients = async () => {
@@ -91,12 +95,74 @@ export default function ClientsPage() {
         ville,
         pays,
         type,
+        statut,
       })
 
       setDialogOpen(false)
       fetchClients()
+      // Réinitialiser le formulaire
+      setNom("")
+      setPrenom("")
+      setEmail("")
+      setTelephone("")
+      setAdresse("")
+      setVille("")
+      setPays("sn")
+      setType("Particulier")
+      setStatut("actif")
     } catch (error) {
       console.error("Erreur lors de l'ajout :", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEditClick = (client: Client) => {
+    setEditingClient(client)
+    setNom(client.nom)
+    setPrenom(client.prenom)
+    setEmail(client.email)
+    setTelephone(client.telephone)
+    setAdresse(client.adresse || "")
+    setVille(client.ville || "")
+    setPays(client.pays || "sn")
+    setType(client.type)
+    setStatut(client.statut || "actif")
+    setEditDialogOpen(true)
+  }
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingClient) return
+
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/clients/${editingClient._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nom,
+          prenom,
+          email,
+          telephone,
+          adresse,
+          ville,
+          pays,
+          type,
+          statut,
+        }),
+      })
+
+      if (!response.ok) throw new Error("Erreur lors de la modification")
+
+      setEditDialogOpen(false)
+      fetchClients()
+      setEditingClient(null)
+    } catch (error) {
+      console.error("Erreur lors de la modification:", error)
+      alert("Une erreur est survenue lors de la modification du client")
     } finally {
       setLoading(false)
     }
@@ -284,6 +350,9 @@ export default function ClientsPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleEditClick(client)}>
+                          Modifier
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() => handleDeleteClient(client._id)}
@@ -298,7 +367,7 @@ export default function ClientsPage() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={4} className="text-center py-8">
                   <div className="flex flex-col items-center justify-center">
                     <Search className="h-8 w-8 text-gray-400 mb-2" />
                     <h3 className="text-lg font-medium">Aucun client trouvé</h3>
@@ -310,6 +379,104 @@ export default function ClientsPage() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Dialog de modification */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Modifier le client</DialogTitle>
+            <DialogDescription>
+              Modifiez les informations du client. Cliquez sur enregistrer une fois terminé.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-type">Type de client</Label>
+                  <Select value={type} onValueChange={(value) => setType(value as "Particulier" | "Entreprise")}>
+                    <SelectTrigger id="edit-type">
+                      <SelectValue placeholder="Sélectionnez un type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Particulier">Particulier</SelectItem>
+                      <SelectItem value="Entreprise">Entreprise</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-statut">Statut</Label>
+                  <Select value={statut} onValueChange={(value) => setStatut(value as "actif" | "inactif")}>
+                    <SelectTrigger id="edit-statut">
+                      <SelectValue placeholder="Sélectionnez un statut" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="actif">Actif</SelectItem>
+                      <SelectItem value="inactif">Inactif</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-prenom">Prénom</Label>
+                  <Input id="edit-prenom" value={prenom} onChange={(e) => setPrenom(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-nom">Nom</Label>
+                  <Input id="edit-nom" value={nom} onChange={(e) => setNom(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">Email</Label>
+                <Input id="edit-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-telephone">Téléphone</Label>
+                <Input id="edit-telephone" value={telephone} onChange={(e) => setTelephone(e.target.value)} />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-adresse">Adresse</Label>
+                <Input id="edit-adresse" value={adresse} onChange={(e) => setAdresse(e.target.value)} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-ville">Ville</Label>
+                  <Input id="edit-ville" value={ville} onChange={(e) => setVille(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-pays">Pays</Label>
+                  <Select value={pays} onValueChange={setPays}>
+                    <SelectTrigger id="edit-pays">
+                      <SelectValue placeholder="Sélectionnez un pays" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ci">Côte d'Ivoire</SelectItem>
+                      <SelectItem value="sn">Sénégal</SelectItem>
+                      <SelectItem value="cm">Cameroun</SelectItem>
+                      <SelectItem value="bf">Burkina Faso</SelectItem>
+                      <SelectItem value="ml">Mali</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                Annuler
+              </Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={loading}>
+                {loading ? "Enregistrement..." : "Enregistrer les modifications"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
