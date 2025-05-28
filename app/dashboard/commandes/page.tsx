@@ -270,7 +270,6 @@ export default function CommandesPage() {
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="preparation">Préparation</SelectItem>
-                        <SelectItem value="expediee">Expédiée</SelectItem>
                         <SelectItem value="livree">Livrée</SelectItem>
                         <SelectItem value="annulee">Annulée</SelectItem>
                       </SelectContent>

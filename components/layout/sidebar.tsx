@@ -67,7 +67,7 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
       title: "Clients",
       href: "/dashboard/clients",
       icon: Users,
-      roles: ["admin", "partenaire"],
+      roles: ["admin"],
     },
     {
       title: "Commandes",
