@@ -41,6 +41,7 @@ export interface Client {
   ville?: string
   pays?: string
   statut?: "actif" | "inactif"
+  nomEntreprise?: string
 }
 
 function getInitials(nom: string, prenom: string): string {
@@ -66,6 +67,7 @@ export default function ClientsPage() {
   const [pays, setPays] = useState("sn")
   const [type, setType] = useState<"Particulier" | "Entreprise">("Particulier")
   const [statut, setStatut] = useState<"actif" | "inactif">("actif")
+  const [nomEntreprise, setNomEntreprise] = useState("")
 
   useEffect(() => {
     fetchClients()
@@ -96,6 +98,7 @@ export default function ClientsPage() {
         pays,
         type,
         statut,
+        nomEntreprise: type === "Entreprise" ? nomEntreprise : undefined,
       })
 
       setDialogOpen(false)
@@ -110,6 +113,7 @@ export default function ClientsPage() {
       setPays("sn")
       setType("Particulier")
       setStatut("actif")
+      setNomEntreprise("")
     } catch (error) {
       console.error("Erreur lors de l'ajout :", error)
     } finally {
@@ -128,6 +132,7 @@ export default function ClientsPage() {
     setPays(client.pays || "sn")
     setType(client.type)
     setStatut(client.statut || "actif")
+    setNomEntreprise(client.nomEntreprise || "")
     setEditDialogOpen(true)
   }
 
@@ -152,6 +157,7 @@ export default function ClientsPage() {
           pays,
           type,
           statut,
+          nomEntreprise: type === "Entreprise" ? nomEntreprise : undefined,
         }),
       })
 
@@ -233,6 +239,18 @@ export default function ClientsPage() {
                     </Select>
                   </div>
                 </div>
+
+                {type === "Entreprise" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="nomEntreprise">Nom de l'entreprise</Label>
+                    <Input
+                      id="nomEntreprise"
+                      value={nomEntreprise}
+                      onChange={(e) => setNomEntreprise(e.target.value)}
+                      required={type === "Entreprise"}
+                    />
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -417,6 +435,18 @@ export default function ClientsPage() {
                   </Select>
                 </div>
               </div>
+
+              {type === "Entreprise" && (
+                <div className="space-y-2">
+                  <Label htmlFor="edit-nomEntreprise">Nom de l'entreprise</Label>
+                  <Input
+                    id="edit-nomEntreprise"
+                    value={nomEntreprise}
+                    onChange={(e) => setNomEntreprise(e.target.value)}
+                    required={type === "Entreprise"}
+                  />
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
