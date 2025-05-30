@@ -52,6 +52,11 @@ export function CommandeDialog({ produit }: { produit: { _id: string, nom: strin
       return
     }
 
+    if (echelonne && mois <= 0) {
+      alert("Veuillez choisir le nombre de mois pour le paiement échelonné.")
+      return
+    }
+
     const clientId = localStorage.getItem("id")
     if (!clientId) {
       alert("Utilisateur non identifié.")

@@ -88,73 +88,62 @@ export default function ProduitsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between gap-4 md:items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Produits</h1>
-          <p className="text-muted-foreground">Gérez votre catalogue de produits électroménagers.</p>
-        </div>
-        {typeof window !== "undefined" && localStorage.getItem("role") == "admin" && (
-          <Button className="bg-blue-600 hover:bg-blue-700" asChild>
-            <Link href="/dashboard/produits/ajouter">
-              <Plus className="mr-2 h-4 w-4" /> Ajouter un produit
-            </Link>
-          </Button>
-        )}
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Rechercher un produit..."
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+    <div className="h-full bg-gray-50 flex flex-col">
+      <div className="space-y-6 p-6 flex-1 h-full">
+        <div className="flex flex-col md:flex-row justify-between gap-4 md:items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Produits</h1>
+            <p className="text-muted-foreground">Gérez votre catalogue de produits électroménagers.</p>
+          </div>
+          {typeof window !== "undefined" && localStorage.getItem("role") == "admin" && (
+            <Button className="bg-blue-600 hover:bg-blue-700" asChild>
+              <Link href="/dashboard/produits/ajouter">
+                <Plus className="mr-2 h-4 w-4" /> Ajouter un produit
+              </Link>
+            </Button>
+          )}
         </div>
 
-      </div>
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Rechercher un produit..."
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
 
-      <div className="border rounded-md">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Produit</TableHead>
-              <TableHead>Prix</TableHead>
-              <TableHead>Statut</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredProducts.length > 0 ? (
-              filteredProducts.map((produit) => (
-                <TableRow key={produit._id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Image
-                        src={produit.image || "/placeholder.svg"}
-                        alt={produit.nom}
-                        width={40}
-                        height={40}
-                        className="rounded-md"
-                      />
-                      <div>
-                        <div className="font-medium">{produit.nom}</div>
-                        <div className="text-sm text-muted-foreground">{produit._id}</div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{produit.prix.toLocaleString()} XOF</TableCell>
-                  <TableCell>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredProducts.length > 0 ? (
+            filteredProducts.map((produit) => (
+              <div key={produit._id} className="border rounded-lg overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
+                <div className="relative aspect-square">
+                  <Image
+                    src={produit.image || "/placeholder.svg"}
+                    alt={produit.nom}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div className="p-4 space-y-3">
+                  <div>
+                    <h3 className="font-medium text-lg">{produit.nom}</h3>
+                    <p className="text-sm text-muted-foreground">{produit._id}</p>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="text-lg font-semibold">{produit.prix.toLocaleString()} XOF</div>
                     <Badge
                       variant={produit.statut === "en stock" ? "default" : "secondary"}
                       className={produit.statut === "en stock" ? "bg-green-500" : "bg-red-500"}
                     >
                       {produit.statut}
                     </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
+                  </div>
+                  <div className="flex justify-end">
                     {typeof window !== "undefined" && localStorage.getItem("role") === "client" ? (
                       <CommandeDialog produit={produit} />
                     ) : (
@@ -188,25 +177,20 @@ export default function ProduitsPage() {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
-                  <div className="flex flex-col items-center justify-center">
-                    <Search className="h-8 w-8 text-gray-400 mb-2" />
-                    <h3 className="text-lg font-medium">Aucun produit trouvé</h3>
-                    <p className="text-sm text-gray-500">
-                      Essayez de modifier vos critères de recherche ou de filtrage.
-                    </p>
                   </div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-
-        </Table>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-full flex flex-col items-center justify-center py-8">
+              <Search className="h-8 w-8 text-gray-400 mb-2" />
+              <h3 className="text-lg font-medium">Aucun produit trouvé</h3>
+              <p className="text-sm text-gray-500">
+                Essayez de modifier vos critères de recherche ou de filtrage.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
