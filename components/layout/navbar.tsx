@@ -40,7 +40,7 @@ export function Navbar({ setIsMobileMenuOpen }: NavbarProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <Avatar className="h-8 w-8">
+                <Avatar className="h-10 w-10">
                   <AvatarFallback className="bg-blue-100 text-blue-600">{initiale}</AvatarFallback>
                 </Avatar>
               </Button>

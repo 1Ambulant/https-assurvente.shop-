@@ -17,7 +17,7 @@ import {
 import { CreditCard, Filter, MoreHorizontal, Search } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { paiementsAPI, commandesAPI } from "@/lib/api"
+import { paiementsAPI, commandesAPI, clientsAPI } from "@/lib/api"
 
 export default function PaiementsPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -44,19 +44,55 @@ export default function PaiementsPage() {
 
   const fetchPaiements = async () => {
     try {
-      const res = await paiementsAPI.getAll()
-      setPaiements(res.data)
+      const [paiementsRes, clientsRes] = await Promise.all([
+        paiementsAPI.getAll(),
+        clientsAPI.getAll()
+      ]);
+
+      // Récupérer l'ID et le rôle du partenaire depuis localStorage
+      const partenaireId = localStorage.getItem("id");
+      const role = localStorage.getItem("role");
+
+      let paiementsData = paiementsRes.data;
+      
+      // Si l'utilisateur est un partenaire, ne montrer que les paiements de ses clients
+      if (role === "partenaire" && partenaireId) {
+        paiementsData = paiementsData.filter((paiement: any) => {
+          const client = clientsRes.data.find((c: any) => c._id === paiement.clientId);
+          return client && client.partenaireId === partenaireId;
+        });
+      }
+
+      setPaiements(paiementsData);
     } catch (err) {
-      console.error("Erreur chargement paiements", err)
+      console.error("Erreur chargement paiements", err);
     }
   }
 
   const fetchCommandes = async () => {
     try {
-      const res = await commandesAPI.getAll()
-      setCommandes(res.data)
+      const [commandesRes, clientsRes] = await Promise.all([
+        commandesAPI.getAll(),
+        clientsAPI.getAll()
+      ]);
+
+      // Récupérer l'ID et le rôle du partenaire depuis localStorage
+      const partenaireId = localStorage.getItem("id");
+      const role = localStorage.getItem("role");
+
+      let commandesData = commandesRes.data;
+      
+      // Si l'utilisateur est un partenaire, ne montrer que les commandes de ses clients
+      if (role === "partenaire" && partenaireId) {
+        commandesData = commandesData.filter((commande: any) => {
+          const client = clientsRes.data.find((c: any) => c._id === commande.clientId);
+          return client && client.partenaireId === partenaireId;
+        });
+      }
+
+      setCommandes(commandesData);
     } catch (err) {
-      console.error("Erreur chargement commandes", err)
+      console.error("Erreur chargement commandes", err);
     }
   }
 
