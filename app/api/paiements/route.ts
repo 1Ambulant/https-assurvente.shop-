@@ -11,6 +11,7 @@ export async function POST(req: Request) {
     try {
         const body = await req.json();
         const db = await mongo.connectToDb();
+        console.log("body", body);
         const result = await db.collection("paiements").insertOne(body);
         return NextResponse.json({ insertedId: result.insertedId });
     } catch (error) {

@@ -221,17 +221,12 @@ export default function PaiementsPage() {
                       <SelectValue placeholder="Choisir une échéance" />
                     </SelectTrigger>
                     <SelectContent>
-                      {/* 👉 Acompte ajouté ici */}
-                      <SelectItem value="acompte">
-                        Acompte – {selectedPaiement.montantInitial / 2} XOF
-                      </SelectItem>
-
                       {/* 👉 Échéances en attente ensuite */}
                       {selectedPaiement.echeances
                         ?.filter((e: any) => e.statut === "en_attente")
                         .map((e: any) => (
                           <SelectItem key={e.numero} value={e.numero.toString()}>
-                            Échéance {e.numero} – {e.montant} XOF – {new Date(e.dateEcheance).toLocaleDateString()}
+                            {e.type === "acompte" ? "Acompte" : `Échéance ${e.numero}`} – {e.montant} XOF – {new Date(e.dateEcheance).toLocaleDateString()}
                           </SelectItem>
                         ))}
                     </SelectContent>

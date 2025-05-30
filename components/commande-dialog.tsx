@@ -105,13 +105,23 @@ export function CommandeDialog({ produit }: { produit: { _id: string, nom: strin
         statut: "en_cours" as "en_cours",
         type: (echelonne ? "echelonne" : "unique") as "echelonne" | "unique",
         echeances: echelonne
-          ? Array(mois).fill(null).map((_, index) => ({
-              numero: index + 1,
-              montant: Math.round((montantTotal - acompte) / mois),
-              dateEcheance: new Date(Date.now() + (index + 1) * 30 * 24 * 60 * 60 * 1000).toISOString(),
-              statut: "en_attente" as "en_attente",
-              montantPaye: 0,
-            }))
+          ? [
+              {
+                numero: 0,
+                type: "acompte",
+                montant: acompte,
+                dateEcheance: new Date().toISOString(),
+                statut: "en_attente" as "en_attente",
+                montantPaye: 0,
+              },
+              ...Array(mois).fill(null).map((_, index) => ({
+                numero: index + 1,
+                montant: Math.round((montantTotal - acompte) / mois),
+                dateEcheance: new Date(Date.now() + (index + 1) * 30 * 24 * 60 * 60 * 1000).toISOString(),
+                statut: "en_attente" as "en_attente",
+                montantPaye: 0,
+              }))
+            ]
           : [],
       };
 
