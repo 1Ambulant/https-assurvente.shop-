@@ -73,13 +73,13 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
       title: "Commandes",
       href: "/dashboard/commandes",
       icon: ShoppingCart,
-      roles: ["admin"],
+      roles: ["admin", "partenaire"],
     },
     {
       title: "Paiements",
       href: "/dashboard/paiements",
       icon: CreditCard,
-      roles: ["admin"],
+      roles: ["admin", "partenaire"],
     },
     {
       title: "Partenaires",
@@ -97,12 +97,6 @@ export function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
       title: "Contrôle à distance",
       href: "/dashboard/controle",
       icon: RemoteControl,
-      roles: ["admin"],
-    },
-    {
-      title: "Statistiques",
-      href: "/dashboard/statistiques",
-      icon: BarChart3,
       roles: ["admin"],
     },
     {

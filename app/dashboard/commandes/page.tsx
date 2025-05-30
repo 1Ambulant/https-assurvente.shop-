@@ -111,13 +111,28 @@ export default function CommandesPage() {
         produitsAPI.getAll(),
         clientsAPI.getAll(),
       ])
-      setCommandes(cmdRes.data)
-      setProduits(prodRes.data)
-      setClients(clientRes.data)
+
+      // Récupérer l'ID et le rôle du partenaire depuis localStorage
+      const partenaireId = localStorage.getItem("id");
+      const role = localStorage.getItem("role");
+
+      let commandesData = cmdRes.data;
+      
+      // Si l'utilisateur est un partenaire, ne montrer que les commandes de ses clients
+      if (role === "partenaire" && partenaireId) {
+        commandesData = commandesData.filter((commande: Commande) => {
+          const client = clientRes.data.find((c: any) => c._id === commande.clientId);
+          return client && client.partenaireId === partenaireId;
+        });
+      }
+
+      setCommandes(commandesData);
+      setProduits(prodRes.data);
+      setClients(clientRes.data);
 
       // Calculer la somme totale des ventes
-      const total = cmdRes.data.reduce((sum: any, commande: { montantTotal: any }) => sum + commande.montantTotal, 0)
-      setVentesTotal(total)
+      const total = commandesData.reduce((sum: any, commande: { montantTotal: any }) => sum + commande.montantTotal, 0);
+      setVentesTotal(total);
     }
     fetchAll()
   }, [])
