@@ -100,6 +100,7 @@ export default function ControlePage() {
               <CardContent>
                 <div className="space-y-2">
                   <div><b>Produit :</b> {produit.nom}</div>
+                  <div><b>Prix :</b> {produit._id}</div>
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end">
