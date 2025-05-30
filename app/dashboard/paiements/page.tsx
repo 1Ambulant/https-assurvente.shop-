@@ -42,8 +42,6 @@ export default function PaiementsPage() {
   const [selectedEcheance, setSelectedEcheance] = useState<number | "acompte" | null>(null);
   const [montantEcheance, setMontantEcheance] = useState("")
 
-
-
   const fetchPaiements = async () => {
     try {
       const res = await paiementsAPI.getAll()
