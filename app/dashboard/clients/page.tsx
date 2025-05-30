@@ -5,7 +5,6 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,10 +23,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Filter, MoreHorizontal, Search, UserPlus } from "lucide-react"
+import { MoreHorizontal, Search, UserPlus } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { clientsAPI } from "@/lib/api"
+import { clientsAPI, partenariatsAPI } from "@/lib/api"
 
 export interface Client {
   _id: string
@@ -44,6 +43,14 @@ export interface Client {
   nomEntreprise?: string
 }
 
+interface Partenaire {
+  _id: string;
+  nom: string;
+  type: string;
+  contact: string;
+  telephone: string;
+}
+
 function getInitials(nom: string, prenom: string): string {
   const firstInitial = prenom ? prenom.charAt(0).toUpperCase() : ""
   const lastInitial = nom ? nom.charAt(0).toUpperCase() : ""
@@ -57,6 +64,10 @@ export default function ClientsPage() {
   const [loading, setLoading] = useState(false)
   const [clients, setClients] = useState<Client[]>([])
   const [editingClient, setEditingClient] = useState<Client | null>(null)
+  const [partenaires, setPartenaires] = useState<Partenaire[]>([])
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false)
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null)
+  const [selectedPartenaire, setSelectedPartenaire] = useState("")
 
   const [nom, setNom] = useState("")
   const [prenom, setPrenom] = useState("")
@@ -71,6 +82,7 @@ export default function ClientsPage() {
 
   useEffect(() => {
     fetchClients()
+    fetchPartenaires()
   }, [])
 
   const fetchClients = async () => {
@@ -80,6 +92,15 @@ export default function ClientsPage() {
       setClients(response.data)
     } catch (error) {
       console.error("Erreur lors du chargement des clients :", error)
+    }
+  }
+
+  const fetchPartenaires = async () => {
+    try {
+      const response = await partenariatsAPI.getAll()
+      setPartenaires(response.data)
+    } catch (error) {
+      console.error("Erreur lors du chargement des partenaires :", error)
     }
   }
 
@@ -191,6 +212,47 @@ export default function ClientsPage() {
       alert("Erreur serveur");
     }
   };
+
+  const handleAssignClick = (client: Client) => {
+    setSelectedClient(client)
+    setAssignDialogOpen(true)
+  }
+
+  const handleAssignSubmit = async () => {
+    if (!selectedClient || !selectedPartenaire) return
+
+    try {
+      const response = await fetch(`/api/clients/${selectedClient._id}/assign`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ partenaireId: selectedPartenaire }),
+      })
+
+      if (!response.ok) throw new Error("Erreur lors de l'assignation")
+
+      setAssignDialogOpen(false)
+      setSelectedClient(null)
+      setSelectedPartenaire("")
+      fetchClients() // Rafraîchir la liste des clients
+    } catch (error) {
+      console.error("Erreur lors de l'assignation:", error)
+      alert("Une erreur est survenue lors de l'assignation du client")
+    }
+  }
+
+  // Filtrer les clients en fonction du terme de recherche
+  const filteredClients = clients.filter((client) => {
+    const searchTermLower = searchTerm.toLowerCase()
+    return (
+      client.nom.toLowerCase().includes(searchTermLower) ||
+      client.prenom.toLowerCase().includes(searchTermLower) ||
+      client.email.toLowerCase().includes(searchTermLower) ||
+      client.telephone.toLowerCase().includes(searchTermLower) ||
+      (client.nomEntreprise?.toLowerCase().includes(searchTermLower) ?? false)
+    )
+  })
 
   return (
     <div className="space-y-6">
@@ -336,8 +398,8 @@ export default function ClientsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {clients.length > 0 ? (
-              clients.map((client, index) => (
+            {filteredClients.length > 0 ? (
+              filteredClients.map((client, index) => (
                 <TableRow key={client._id || `${client.nom}-${client.email}-${index}`}>
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -370,6 +432,9 @@ export default function ClientsPage() {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => handleEditClick(client)}>
                           Modifier
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleAssignClick(client)}>
+                          Assigner à un partenaire
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
@@ -505,6 +570,43 @@ export default function ClientsPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog d'assignation */}
+      <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Assigner à un partenaire</DialogTitle>
+            <DialogDescription>
+              Sélectionnez le partenaire à qui assigner ce client.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="partenaire">Partenaire</Label>
+              <Select value={selectedPartenaire} onValueChange={setSelectedPartenaire}>
+                <SelectTrigger id="partenaire">
+                  <SelectValue placeholder="Sélectionnez un partenaire" />
+                </SelectTrigger>
+                <SelectContent>
+                  {partenaires.map((partenaire) => (
+                    <SelectItem key={partenaire._id} value={partenaire._id}>
+                      {partenaire.nom} - {partenaire.type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleAssignSubmit} disabled={!selectedPartenaire}>
+              Assigner
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
