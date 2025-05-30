@@ -88,7 +88,7 @@ export default function ProduitsPage() {
   }
 
   return (
-    <div className="h-full bg-gray-50 flex flex-col">
+    <div className="h-[100vh] l bg-gray-50 flex flex-col">
       <div className="space-y-6 p-6 flex-1 h-full">
         <div className="flex flex-col md:flex-row justify-between gap-4 md:items-center">
           <div>
