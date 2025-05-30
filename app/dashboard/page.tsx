@@ -28,7 +28,7 @@ export default function DashboardPage() {
 
      // 🔁 Vérification du rôle dans le localStorage
      const role = localStorage.getItem("role")
-     if (role === "client") {
+     if (role === "client" || role === "partenaire") {
        router.push("/dashboard/produits")
        return
      }

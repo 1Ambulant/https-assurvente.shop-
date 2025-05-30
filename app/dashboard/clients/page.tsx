@@ -41,6 +41,7 @@ export interface Client {
   pays?: string
   statut?: "actif" | "inactif"
   nomEntreprise?: string
+  partenaireId?: string
 }
 
 interface Partenaire {
@@ -89,7 +90,18 @@ export default function ClientsPage() {
     try {
       const response = await clientsAPI.getAll()
       console.log("Clients récupérés :", response.data)
-      setClients(response.data)
+      let clientsData = response.data
+      
+      // Récupérer l'ID et le rôle du partenaire depuis localStorage
+      const partenaireId = localStorage.getItem("id")
+      const role = localStorage.getItem("role")
+      
+      // Si l'utilisateur est un partenaire, ne montrer que ses clients
+      if (role === "partenaire" && partenaireId) {
+        clientsData = clientsData.filter((client: Client) => client.partenaireId === partenaireId)
+      }
+      
+      setClients(clientsData)
     } catch (error) {
       console.error("Erreur lors du chargement des clients :", error)
     }

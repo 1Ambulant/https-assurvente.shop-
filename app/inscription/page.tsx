@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { clientsAPI, partenariatsAPI } from "@/lib/api";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export default function Inscription() {
   const router = useRouter();
@@ -90,250 +94,111 @@ export default function Inscription() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Inscription
-        </h2>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Type de compte</label>
-              <select
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                value={type}
-                onChange={(e) => setType(e.target.value as "client" | "partenaire")}
-              >
-                <option value="client">Client</option>
-                <option value="partenaire">Partenaire</option>
-              </select>
-            </div>
-
-            {type === "client" ? (
-              <form onSubmit={handleClientSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Type de client</label>
-                  <select
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={clientData.type}
-                    onChange={(e) => setClientData({ ...clientData, type: e.target.value as "Particulier" | "Entreprise" })}
-                  >
-                    <option value="Particulier">Particulier</option>
-                    <option value="Entreprise">Entreprise</option>
-                  </select>
-                </div>
-
-                {clientData.type === "Entreprise" && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Nom de l'entreprise</label>
-                    <input
-                      type="text"
-                      required
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                      value={clientData.nomEntreprise}
-                      onChange={(e) => setClientData({ ...clientData, nomEntreprise: e.target.value })}
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Nom</label>
-                  <input
-                    type="text"
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={clientData.nom}
-                    onChange={(e) => setClientData({ ...clientData, nom: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Prénom</label>
-                  <input
-                    type="text"
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={clientData.prenom}
-                    onChange={(e) => setClientData({ ...clientData, prenom: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Email</label>
-                  <input
-                    type="email"
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={clientData.email}
-                    onChange={(e) => setClientData({ ...clientData, email: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Téléphone</label>
-                  <input
-                    type="tel"
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={clientData.telephone}
-                    onChange={(e) => setClientData({ ...clientData, telephone: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Adresse</label>
-                  <input
-                    type="text"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={clientData.adresse}
-                    onChange={(e) => setClientData({ ...clientData, adresse: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Ville</label>
-                  <input
-                    type="text"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={clientData.ville}
-                    onChange={(e) => setClientData({ ...clientData, ville: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Pays</label>
-                  <input
-                    type="text"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={clientData.pays}
-                    onChange={(e) => setClientData({ ...clientData, pays: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Mot de passe</label>
-                  <input
-                    type="password"
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={clientData.motDePasse}
-                    onChange={(e) => setClientData({ ...clientData, motDePasse: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Confirmer le mot de passe</label>
-                  <input
-                    type="password"
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={clientConfirmPassword}
-                    onChange={(e) => setClientConfirmPassword(e.target.value)}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  {loading ? "Inscription en cours..." : "S'inscrire"}
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handlePartenaireSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Nom de l'entreprise</label>
-                  <input
-                    type="text"
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={partenaireData.nom}
-                    onChange={(e) => setPartenaireData({ ...partenaireData, nom: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Type d'entreprise</label>
-                  <input
-                    type="text"
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={partenaireData.type}
-                    onChange={(e) => setPartenaireData({ ...partenaireData, type: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Personne à contacter</label>
-                  <input
-                    type="text"
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={partenaireData.contact}
-                    onChange={(e) => setPartenaireData({ ...partenaireData, contact: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Téléphone</label>
-                  <input
-                    type="tel"
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={partenaireData.telephone}
-                    onChange={(e) => setPartenaireData({ ...partenaireData, telephone: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Adresse</label>
-                  <input
-                    type="text"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={partenaireData.adresse}
-                    onChange={(e) => setPartenaireData({ ...partenaireData, adresse: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Description</label>
-                  <textarea
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={partenaireData.description}
-                    onChange={(e) => setPartenaireData({ ...partenaireData, description: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Email</label>
-                  <input
-                    type="email"
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={partenaireData.email}
-                    onChange={(e) => setPartenaireData({ ...partenaireData, email: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Mot de passe</label>
-                  <input
-                    type="password"
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={partenaireData.motDePasse}
-                    onChange={(e) => setPartenaireData({ ...partenaireData, motDePasse: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Confirmer le mot de passe</label>
-                  <input
-                    type="password"
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    value={partenaireConfirmPassword}
-                    onChange={(e) => setPartenaireConfirmPassword(e.target.value)}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  {loading ? "Inscription en cours..." : "S'inscrire"}
-                </button>
-              </form>
-            )}
-          </div>
+    <div className="flex min-h-screen items-center justify-center bg-gray-100">
+      <div className="w-full max-w-md rounded-lg border bg-white p-8 shadow-md">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold">Inscription</h1>
+          <p className="text-gray-500">Créez votre compte pour commencer</p>
         </div>
+        <form onSubmit={type === "client" ? handleClientSubmit : handlePartenaireSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="type">Type de compte</Label>
+            <Select value={type} onValueChange={(value) => setType(value as "client" | "partenaire")}>
+              <SelectTrigger id="type">
+                <SelectValue placeholder="Sélectionnez un type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="client">Client</SelectItem>
+                <SelectItem value="partenaire">Partenaire</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {type === "partenaire" && (
+            <div>
+              <Label htmlFor="typePartenaire">Type de partenaire</Label>
+              <Select value={partenaireData.type} onValueChange={(value) => setPartenaireData({ ...partenaireData, type: value as "revendeur" | "installateur" })}>
+                <SelectTrigger id="typePartenaire">
+                  <SelectValue placeholder="Sélectionnez un type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="revendeur">Revendeur</SelectItem>
+                  <SelectItem value="installateur">Installateur</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div>
+            <Label htmlFor="nom">Nom</Label>
+            <Input id="nom" value={type === "client" ? clientData.nom : partenaireData.nom} onChange={(e) => {
+              if (type === "client") {
+                setClientData({ ...clientData, nom: e.target.value });
+              } else {
+                setPartenaireData({ ...partenaireData, nom: e.target.value });
+              }
+            }} required />
+          </div>
+
+          <div>
+            <Label htmlFor="prenom">Prénom</Label>
+            <Input id="prenom" value={type === "client" ? clientData.prenom : partenaireData.contact} onChange={(e) => {
+              if (type === "client") {
+                setClientData({ ...clientData, prenom: e.target.value });
+              } else {
+                setPartenaireData({ ...partenaireData, contact: e.target.value });
+              }
+            }} required />
+          </div>
+
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" type="email" value={type === "client" ? clientData.email : partenaireData.email} onChange={(e) => {
+              if (type === "client") {
+                setClientData({ ...clientData, email: e.target.value });
+              } else {
+                setPartenaireData({ ...partenaireData, email: e.target.value });
+              }
+            }} required />
+          </div>
+
+          <div>
+            <Label htmlFor="telephone">Téléphone</Label>
+            <Input id="telephone" value={type === "client" ? clientData.telephone : partenaireData.telephone} onChange={(e) => {
+              if (type === "client") {
+                setClientData({ ...clientData, telephone: e.target.value });
+              } else {
+                setPartenaireData({ ...partenaireData, telephone: e.target.value });
+              }
+            }} required />
+          </div>
+
+          <div>
+            <Label htmlFor="password">Mot de passe</Label>
+            <Input id="password" type="password" value={type === "client" ? clientData.motDePasse : partenaireData.motDePasse} onChange={(e) => {
+              if (type === "client") {
+                setClientData({ ...clientData, motDePasse: e.target.value });
+              } else {
+                setPartenaireData({ ...partenaireData, motDePasse: e.target.value });
+              }
+            }} required />
+          </div>
+
+          <div>
+            <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+            <Input id="confirmPassword" type="password" value={type === "client" ? clientConfirmPassword : partenaireConfirmPassword} onChange={(e) => {
+              if (type === "client") {
+                setClientConfirmPassword(e.target.value);
+              } else {
+                setPartenaireConfirmPassword(e.target.value);
+              }
+            }} required />
+          </div>
+
+          <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={loading}>
+            {loading ? "Inscription en cours..." : "S'inscrire"}
+          </Button>
+        </form>
       </div>
     </div>
   );
