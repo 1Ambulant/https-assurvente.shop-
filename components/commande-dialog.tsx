@@ -120,12 +120,12 @@ export function CommandeDialog({ produit }: { produit: { _id: string, nom: strin
                 montantPaye: 0,
               },
               ...Array(mois).fill(null).map((_, index) => ({
-                numero: index + 1,
+              numero: index + 1,
                 montant: Math.round((montantTotal - acompte) / mois),
-                dateEcheance: new Date(Date.now() + (index + 1) * 30 * 24 * 60 * 60 * 1000).toISOString(),
-                statut: "en_attente" as "en_attente",
-                montantPaye: 0,
-              }))
+              dateEcheance: new Date(Date.now() + (index + 1) * 30 * 24 * 60 * 60 * 1000).toISOString(),
+              statut: "en_attente" as "en_attente",
+              montantPaye: 0,
+            }))
             ]
           : [],
       };
@@ -201,32 +201,160 @@ export function CommandeDialog({ produit }: { produit: { _id: string, nom: strin
       </DialogContent>
 
       <Dialog open={showCGUV} onOpenChange={setShowCGUV}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-white border border-gray-200 shadow-lg">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-white border border-gray-200 shadow-lg">
           <DialogHeader className="bg-white">
-            <DialogTitle className="text-xl font-bold text-gray-900">Conditions Générales d'Utilisation et de Vente</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-gray-900">Conditions Générales d'Utilisation, de Vente et Politique de Confidentialité</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 text-gray-800 bg-white">
-            <h3 className="font-semibold text-lg">1. Objet</h3>
-            <p>Les présentes conditions générales d'utilisation et de vente (CGUV) régissent les ventes de produits de notre site.</p>
+          <div className="space-y-6 text-gray-800 bg-white">
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Préambule</h3>
+              <p className="mb-4">
+                African Global Business, société de droit sénégalais, immatriculée au Registre du Commerce et du Crédit Mobilier sous le numéro [numéro], dont le siège social est situé à [adresse], exploite la plateforme assurvente.shop. Cette plateforme permet la vente en ligne à crédit de produits ainsi que la mise à disposition d'un système de contrôle à distance et de localisation des produits vendus.
+              </p>
+              <p>
+                Les présentes Conditions Générales d'Utilisation et de Vente (CGUV), complétées par la Politique de Confidentialité, régissent les relations contractuelles entre la Société, les clients (ci-après « Client ») et les partenaires propriétaires de produits (ci-après « Partenaire »), ainsi que les modalités de collecte et de traitement des données personnelles.
+              </p>
+            </div>
 
-            <h3 className="font-semibold text-lg">2. Prix</h3>
-            <p>Les prix de nos produits sont indiqués en FCFA toutes taxes comprises (TTC).</p>
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Article 1 : Acceptation des CGUV et de la Politique de Confidentialité</h3>
+              <p>
+                Toute utilisation du site, commande ou accès aux services implique l'acceptation sans réserve des présentes CGUV et de la Politique de confidentialité. La Société se réserve le droit de modifier ces documents à tout moment, les nouvelles versions s'appliquant dès leur mise en ligne.
+              </p>
+            </div>
 
-            <h3 className="font-semibold text-lg">3. Paiement</h3>
-            <p>Le fait de valider votre commande implique pour vous l'acceptation de l'ensemble des présentes conditions.</p>
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Article 2 : Objet</h3>
+              <p>
+                Les CGUV définissent les conditions d'utilisation du site, les modalités de vente à crédit, les droits et obligations des parties, ainsi que les conditions d'utilisation du système de contrôle à distance. La Politique de Confidentialité décrit les modalités de collecte, d'utilisation, de conservation et de protection des données personnelles.
+              </p>
+            </div>
 
-            <h3 className="font-semibold text-lg">4. Paiement échelonné</h3>
-            <p>En cas de paiement échelonné, des frais supplémentaires seront appliqués selon les tranches suivantes :</p>
-            <ul className="list-disc pl-6 space-y-1">
-              <li>Jusqu'à 150.000 FCFA : +10%</li>
-              <li>De 150.100 à 300.000 FCFA : +7.5%</li>
-              <li>De 301.000 à 500.000 FCFA : +5%</li>
-              <li>De 501.000 à 750.000 FCFA : +3.5%</li>
-              <li>Au-delà de 750.000 FCFA : +2.5%</li>
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Article 3 : Produits, partenaires et services</h3>
+              <h4 className="font-medium mb-2">3.1 Produits</h4>
+              <p className="mb-4">
+                Les produits proposés sont décrits sur le site avec leurs caractéristiques, prix, modalités de paiement et garanties. La Société garantit leur conformité.
+              </p>
+              <h4 className="font-medium mb-2">3.2 Partenaires</h4>
+              <p>
+                Les Partenaires peuvent proposer leurs produits via la plateforme, utiliser le système de contrôle à distance moyennant un forfait ou déléguer cette gestion à la Société. Ils disposent d'un droit de regard sur les paiements, commandes et produits.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Article 4 : Vente à crédit et système de contrôle à distance</h3>
+              <h4 className="font-medium mb-2">4.1 Modalités de vente à crédit</h4>
+              <p className="mb-4">
+                Le Client peut acheter à crédit sous réserve d'acceptation par la Société, qui peut effectuer une analyse de solvabilité.
+              </p>
+              <h4 className="font-medium mb-2">4.2 Contrôle à distance</h4>
+              <p className="mb-4">
+                Un système de contrôle et de localisation est activé sur les produits vendus à crédit pour garantir le paiement intégral. Il permet de restreindre l'usage des produits en cas de défaut de paiement.
+              </p>
+              <h4 className="font-medium mb-2">4.3 Gestion par les Partenaires</h4>
+              <p>
+                Les Partenaires peuvent gérer eux-mêmes ou confier à la Société la gestion du contrôle à distance.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Article 5 : Modalités de paiement</h3>
+              <p>
+                Le paiement s'effectue comptant ou échelonné. Le défaut de paiement entraîne activation du contrôle à distance, suspension ou résiliation du contrat, et récupération des produits.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Article 6 : Droits et obligations</h3>
+              <h4 className="font-medium mb-2">6.1 Obligations de la Société</h4>
+              <ul className="list-disc pl-6 mb-4">
+                <li>Fournir des produits conformes</li>
+                <li>Assurer le fonctionnement de la plateforme et du système de contrôle</li>
+              </ul>
+              <h4 className="font-medium mb-2">6.2 Obligations du Client</h4>
+              <ul className="list-disc pl-6 mb-4">
+                <li>Fournir des informations exactes</li>
+                <li>Respecter les échéances de paiement</li>
+                <li>Autoriser le contrôle à distance</li>
+              </ul>
+              <h4 className="font-medium mb-2">6.3 Obligations des Partenaires</h4>
+              <ul className="list-disc pl-6">
+                <li>Proposer des produits conformes</li>
+                <li>Respecter les conditions d'utilisation et payer les forfaits</li>
             </ul>
+            </div>
 
-            <h3 className="font-semibold text-lg">5. Livraison</h3>
-            <p>Les délais de livraison sont donnés à titre indicatif. Nous ne pourrons être tenus responsables des conséquences dues à un retard de livraison.</p>
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Article 7 : Protection des données personnelles</h3>
+              <h4 className="font-medium mb-2">7.1 Responsable du traitement</h4>
+              <p className="mb-4">
+                Le responsable du traitement est African Global Business, [adresse], contact : [email], [téléphone].
+              </p>
+              <h4 className="font-medium mb-2">7.2 Données collectées</h4>
+              <p className="mb-4">
+                Nous collectons : données d'identification, données de connexion, données financières, données sur les produits (localisation, contrôle), données communiquées par les partenaires.
+              </p>
+              <h4 className="font-medium mb-2">7.3 Finalités</h4>
+              <p className="mb-4">
+                Les données sont utilisées pour la gestion des commandes, paiements, livraisons, ventes à crédit, contrôle à distance, gestion des comptes, amélioration du service, communication, et respect des obligations légales.
+              </p>
+              <h4 className="font-medium mb-2">7.4 Base légale</h4>
+              <p className="mb-4">
+                Traitement fondé sur l'exécution du contrat, consentement, obligations légales, et intérêts légitimes.
+              </p>
+              <h4 className="font-medium mb-2">7.5 Destinataires</h4>
+              <p className="mb-4">
+                Données communiquées à la Société, partenaires, prestataires techniques, autorités compétentes.
+              </p>
+              <h4 className="font-medium mb-2">7.6 Durée de conservation</h4>
+              <p className="mb-4">
+                Conservation conforme aux obligations légales sénégalaises.
+              </p>
+              <h4 className="font-medium mb-2">7.7 Sécurité</h4>
+              <p className="mb-4">
+                Mesures techniques et organisationnelles pour protéger les données.
+              </p>
+              <h4 className="font-medium mb-2">7.8 Droits des utilisateurs</h4>
+              <p>
+                Droit d'accès, rectification, opposition, suppression, limitation, retrait du consentement, et recours auprès de la Commission des Données Personnelles. Exercice via contact : [email].
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Article 8 : Cookies et traceurs</h3>
+              <p>
+                Le site utilise des cookies pour améliorer la navigation et mesurer l'audience. Les utilisateurs peuvent gérer leur consentement via le bandeau d'information et les paramètres de leur navigateur.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Article 9 : Responsabilité</h3>
+              <p>
+                La Société est responsable sauf cas de force majeure. Sa responsabilité est limitée conformément au droit sénégalais. Elle n'est pas responsable des dommages indirects liés au contrôle à distance sauf faute lourde.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Article 10 : Droit applicable et juridiction compétente</h3>
+              <p>
+                Les présentes CGUV et Politique de Confidentialité sont régies par le droit sénégalais. Tout litige sera soumis aux tribunaux compétents de Dakar.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Article 11 : Résiliation</h3>
+              <p>
+                En cas de manquement, notamment de paiement, la Société peut résilier le contrat, activer le contrôle à distance et récupérer les produits. Les Partenaires peuvent voir leur accès suspendu.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Article 12 : Réclamations et médiation</h3>
+              <p>
+                Les réclamations s'adressent au service client via le site. En cas de litige non résolu, un médiateur de la consommation peut être saisi conformément à la loi.
+              </p>
+            </div>
           </div>
           <DialogFooter className="bg-white">
             <Button onClick={() => {

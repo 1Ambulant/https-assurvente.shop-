@@ -52,6 +52,7 @@ export const produitsAPI = {
     prix: number;
     description?: string;
     image?: string;
+    partenaireIds?: string[];
   }) => api.post("/produits", data),
 
   update: (id: string, data: {
@@ -59,6 +60,7 @@ export const produitsAPI = {
     prix: number;
     description?: string;
     image?: string;
+    partenaireIds?: string[];
   }) => api.put(`/produits/${id}`, data),
 };
 

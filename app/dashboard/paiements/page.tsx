@@ -86,7 +86,7 @@ export default function PaiementsPage() {
       if (role === "partenaire" && partenaireId) {
         commandesData = commandesData.filter((commande: any) => {
           const client = clientsRes.data.find((c: any) => c._id === commande.clientId);
-          return client && client.partenaireId === partenaireId;
+          return client && client.partenaireIds?.includes(partenaireId);
         });
       }
 

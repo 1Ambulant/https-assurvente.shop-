@@ -35,12 +35,20 @@ export default function AjouterProduitPage() {
     }
 
     try {
-      await produitsAPI.create({
+      // Récupérer l'ID et le rôle du partenaire depuis localStorage
+      const partenaireId = localStorage.getItem("id")
+      const role = localStorage.getItem("role")
+
+      // Créer le produit avec les données de base
+      const produitData = {
         nom,
         prix,
         description,
         image,
-      })
+        partenaireIds: role === "partenaire" && partenaireId ? [partenaireId] : undefined
+      }
+
+      await produitsAPI.create(produitData)
       router.push("/dashboard/produits")
     } catch (err) {
       setError("Une erreur est survenue lors de la création du produit")

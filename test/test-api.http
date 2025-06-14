@@ -5,13 +5,13 @@ Accept: application/json
 @id = 682a212034e479ff1f5078a6
 
 ### ➕ POST créer un utilisateur
-POST http://localhost:3000/api/users/register?api_key=super-cle-api-123456
+POST https://assurvente.shop/api/users/register?api_key=super-cle-api-123456
 Content-Type: application/json
 
 {
-  "nom": "Testeur",
-  "email": "test@example.com",
-  "motDePasse": "test1234",
+  "nom": "Ulisse",
+  "email": "abgroup.ulisse@gmail.com",
+  "motDePasse": "password",
   "role": "admin"
 }
 

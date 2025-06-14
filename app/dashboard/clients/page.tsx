@@ -41,7 +41,7 @@ export interface Client {
   pays?: string
   statut?: "actif" | "inactif"
   nomEntreprise?: string
-  partenaireId?: string
+  partenaireIds?: string[]
 }
 
 interface Partenaire {
@@ -98,7 +98,9 @@ export default function ClientsPage() {
       
       // Si l'utilisateur est un partenaire, ne montrer que ses clients
       if (role === "partenaire" && partenaireId) {
-        clientsData = clientsData.filter((client: Client) => client.partenaireId === partenaireId)
+        clientsData = clientsData.filter((client: Client) => 
+          client.partenaireIds?.includes(partenaireId)
+        )
       }
       
       setClients(clientsData)
@@ -121,7 +123,24 @@ export default function ClientsPage() {
     setLoading(true)
 
     try {
-      await clientsAPI.create({
+      // Récupérer l'ID et le rôle du partenaire depuis localStorage
+      const partenaireId = localStorage.getItem("id")
+      const role = localStorage.getItem("role")
+
+      // Créer le client avec les données de base
+      const clientData: {
+        nom: string;
+        prenom: string;
+        email: string;
+        telephone: string;
+        adresse: string;
+        ville: string;
+        pays: string;
+        type: "Particulier" | "Entreprise";
+        statut: "actif" | "inactif";
+        nomEntreprise?: string;
+        partenaireIds?: string[];
+      } = {
         nom,
         prenom,
         email,
@@ -132,7 +151,27 @@ export default function ClientsPage() {
         type,
         statut,
         nomEntreprise: type === "Entreprise" ? nomEntreprise : undefined,
-      })
+      }
+
+      // Si c'est un partenaire qui crée le client, ajouter son ID dans partenaireIds
+      if (role === "partenaire" && partenaireId) {
+        clientData.partenaireIds = [partenaireId]
+      }
+
+      // Créer le client
+      const response = await clientsAPI.create(clientData)
+      const newClientId = response.data._id
+
+      // Si c'est un partenaire, faire l'assignation
+      if (role === "partenaire" && partenaireId && newClientId) {
+        await fetch(`/api/clients/${newClientId}/assign`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ partenaireId }),
+        })
+      }
 
       setDialogOpen(false)
       fetchClients()

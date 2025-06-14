@@ -122,7 +122,7 @@ export default function CommandesPage() {
       if (role === "partenaire" && partenaireId) {
         commandesData = commandesData.filter((commande: Commande) => {
           const client = clientRes.data.find((c: any) => c._id === commande.clientId);
-          return client && client.partenaireId === partenaireId;
+          return client && client.partenaireIds?.includes(partenaireId);
         });
       }
 

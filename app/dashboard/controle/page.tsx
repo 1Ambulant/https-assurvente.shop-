@@ -79,7 +79,7 @@ export default function ControlePage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Produits</h1>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {commandes.map((commande) => {
           const produit = produits.find((p) => p._id === commande.produitId)
           if (!produit) return null
@@ -91,8 +91,8 @@ export default function ControlePage() {
                   alt={produit.nom}
                   fill
                   className="object-cover"
-                />
-              </div>
+                  />
+                </div>
               <CardHeader>
                 <CardTitle>{commande.commande}</CardTitle>
                 <CardDescription>Commande du {new Date(commande.dateCommande).toLocaleDateString()}</CardDescription>
@@ -114,7 +114,7 @@ export default function ControlePage() {
             </Card>
           )
         })}
-      </div>
+          </div>
     </div>
   )
 }

@@ -6,19 +6,10 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
   try {
     const db = await mongo.connectToDb();
     
-    // Récupérer les commandes du partenaire
-    const commandes = await db
-      .collection("commandes")
-      .find({ partenaireId: params.id })
-      .toArray();
-
-    // Extraire les IDs des clients uniques
-    const clientIds = [...new Set(commandes.map(cmd => cmd.clientId))];
-
-    // Récupérer les informations des clients
+    // Récupérer les clients qui ont ce partenaire dans leur tableau partenaireIds
     const clients = await db
       .collection("clients")
-      .find({ _id: { $in: clientIds.map(id => new ObjectId(id)) } })
+      .find({ partenaireIds: params.id })
       .toArray();
 
     return NextResponse.json(clients);

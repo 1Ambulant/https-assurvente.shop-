@@ -19,10 +19,12 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       return NextResponse.json({ error: "Partenaire non trouvé" }, { status: 404 });
     }
 
-    // Mettre à jour le client avec l'ID du partenaire
+    // Mettre à jour le client en ajoutant le partenaire au tableau partenaireIds
     const result = await db.collection("clients").updateOne(
       { _id: new ObjectId(params.id) },
-      { $set: { partenaireId: partenaireId } }
+      { 
+        $addToSet: { partenaireIds: partenaireId }
+      }
     );
 
     if (result.matchedCount === 0) {
