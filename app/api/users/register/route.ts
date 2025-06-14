@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { mongo } from "@/lib/mongodb";
-import { validateApiKey } from "@/lib/verifyApiKey";
 
 export async function POST(req: Request) {
-
-    const error = validateApiKey(req);
-    if (error) return error;
 
     try {
         const body = await req.json();
