@@ -1,0 +1,254 @@
+{
+  "name": "D — Agent Mentor Bourse",
+  "meta": {
+    "description": "Déclenché par commande Telegram /apprendre ou ajout dans EDUCATION_BOURSE. Explique les notions boursières simplement, avec exemples BRVM."
+  },
+  "nodes": [
+    {
+      "id": "trigger-telegram",
+      "name": "Écoute commandes Telegram",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "position": [200, 250],
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "notes": "Écoute tous les messages. Le nœud de routage filtre ensuite."
+    },
+    {
+      "id": "router-commandes",
+      "name": "Router selon commande",
+      "type": "n8n-nodes-base.switch",
+      "position": [400, 250],
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{$json.message.text}}",
+        "rules": {
+          "rules": [
+            {
+              "operation": "startsWith",
+              "value2": "/apprendre",
+              "output": 0
+            },
+            {
+              "operation": "startsWith",
+              "value2": "/analyse",
+              "output": 1
+            },
+            {
+              "operation": "startsWith",
+              "value2": "/risque",
+              "output": 2
+            },
+            {
+              "operation": "startsWith",
+              "value2": "/aide",
+              "output": 3
+            }
+          ],
+          "fallback": "noMatch"
+        }
+      }
+    },
+    {
+      "id": "extraire-notion",
+      "name": "Extraire notion à apprendre",
+      "type": "n8n-nodes-base.code",
+      "position": [650, 150],
+      "parameters": {
+        "jsCode": "const text = $input.first().json.message.text || '';\nconst chatId = $input.first().json.message.chat.id;\n\n// Extraire la notion après /apprendre\nconst notion = text.replace('/apprendre', '').trim();\n\nreturn [{ json: { notion: notion || 'investissement', chatId } }];"
+      }
+    },
+    {
+      "id": "agent-mentor",
+      "name": "Agent Mentor (Claude)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "position": [900, 150],
+      "parameters": {
+        "model": "claude-sonnet-4-6",
+        "systemPrompt": "Tu es l'Agent Mentor Bourse pour un investisseur débutant sénégalais. Voir agents/PROMPTS_AGENTS.md pour ton prompt complet. Tu utilises un langage simple, des exemples concrets en FCFA et sur la BRVM. Tu ne promets jamais de gains. Tu encourages la prudence et l'apprentissage progressif.",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Explique-moi cette notion boursière de façon simple : **{{$json.notion}}**\n\nStructure ta réponse ainsi :\n1. Définition simple (2-3 phrases maximum)\n2. Exemple concret avec une action BRVM (chiffres en FCFA)\n3. Pourquoi c'est important pour moi en tant qu'investisseur débutant\n4. Un conseil pratique lié à cette notion\n5. Une mise en garde si applicable\n\nMax 400 mots. Utilise des emojis pour rendre ça lisible sur Telegram."
+          }
+        ]
+      }
+    },
+    {
+      "id": "sauvegarder-education",
+      "name": "Sauvegarder dans EDUCATION_BOURSE",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [1100, 150],
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "sheetId": "{{$env.SHEETS_ID}}",
+        "sheetName": "EDUCATION_BOURSE",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date": "={{new Date().toISOString()}}",
+            "notion": "={{$node['Extraire notion à apprendre'].json.notion}}",
+            "explication_simple": "={{$json.text}}",
+            "exemple_BRVM": "=Voir explication",
+            "compris": "à revoir",
+            "source": "Agent Mentor Claude"
+          }
+        }
+      }
+    },
+    {
+      "id": "repondre-telegram-mentor",
+      "name": "Répondre sur Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "position": [1300, 150],
+      "parameters": {
+        "chatId": "={{$node['Extraire notion à apprendre'].json.chatId}}",
+        "text": "={{$node['Agent Mentor (Claude)'].json.text}}\n\n─────────────────\n📚 _Cette explication a été sauvegardée dans votre onglet EDUCATION_BOURSE_\n💡 _Tapez /apprendre [notion] pour apprendre autre chose_",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      }
+    },
+    {
+      "id": "extraire-ticker-analyse",
+      "name": "Extraire ticker pour analyse",
+      "type": "n8n-nodes-base.code",
+      "position": [650, 300],
+      "parameters": {
+        "jsCode": "const text = $input.first().json.message.text || '';\nconst chatId = $input.first().json.message.chat.id;\nconst ticker = text.replace('/analyse', '').trim().toUpperCase();\nreturn [{ json: { ticker: ticker || '', chatId } }];"
+      }
+    },
+    {
+      "id": "lire-watchlist-analyse",
+      "name": "Lire données action Watchlist",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [850, 300],
+      "parameters": {
+        "operation": "readAllRows",
+        "sheetId": "{{$env.SHEETS_ID}}",
+        "sheetName": "WATCHLIST_BRVM"
+      }
+    },
+    {
+      "id": "agent-analyste-brvm",
+      "name": "Agent Analyste BRVM",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "position": [1050, 300],
+      "parameters": {
+        "model": "claude-sonnet-4-6",
+        "systemPrompt": "Tu es l'Agent Analyste BRVM. Voir agents/PROMPTS_AGENTS.md. Tu analyses avec prudence, tu ne fais aucune promesse, tu cites tes sources. Classification : éviter / surveiller / intéressante / achat_progressif_possible.",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Analyse l'action {{$node['Extraire ticker pour analyse'].json.ticker}} de la BRVM.\n\nDonnées disponibles dans ma watchlist :\n{{JSON.stringify($json, null, 2)}}\n\nDonne moi :\n1. Profil de la société\n2. Points forts\n3. Points de risque\n4. Liquidité de l'action\n5. Dividendes si connus\n6. Ta classification : éviter / surveiller / intéressante / achat_progressif_possible\n7. Pourquoi (justification courte)\n8. Ce qu'il faudrait vérifier avant d'investir\n\nMax 500 mots. Rappelle toujours qu'une analyse n'est pas un conseil d'achat."
+          }
+        ]
+      }
+    },
+    {
+      "id": "repondre-telegram-analyse",
+      "name": "Répondre analyse Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "position": [1250, 300],
+      "parameters": {
+        "chatId": "={{$node['Extraire ticker pour analyse'].json.chatId}}",
+        "text": "🔍 *Analyse {{$node['Extraire ticker pour analyse'].json.ticker}}*\n\n={{$node['Agent Analyste BRVM'].json.text}}\n\n─────────────────\n⚠️ _Analyse informative uniquement. Pas un conseil d'investissement._\n📋 _Consultez votre JOURNAL_DECISIONS avant toute action._",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      }
+    },
+    {
+      "id": "extraire-question-risque",
+      "name": "Extraire question risque",
+      "type": "n8n-nodes-base.code",
+      "position": [650, 450],
+      "parameters": {
+        "jsCode": "const text = $input.first().json.message.text || '';\nconst chatId = $input.first().json.message.chat.id;\nconst question = text.replace('/risque', '').trim();\nreturn [{ json: { question: question || 'évaluer mon profil de risque', chatId } }];"
+      }
+    },
+    {
+      "id": "agent-risque",
+      "name": "Agent Risque",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "position": [850, 450],
+      "parameters": {
+        "model": "claude-sonnet-4-6",
+        "systemPrompt": "Tu es l'Agent Risque. Voir agents/PROMPTS_AGENTS.md. Tu protèges l'utilisateur. Tu bloques toute recommandation agressive. Tu rappelles les règles fondamentales de protection du capital.",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Question ou situation : {{$json.question}}\n\nDonne un avis prudent sur le risque. Rappelle les règles fondamentales si pertinent :\n- Max 10-15% du portefeuille sur une ligne\n- Ne jamais investir l'argent nécessaire à court terme\n- Toujours garder du cash de sécurité\n- Pas de trading court terme\n- Pas d'achat sur rumeur\n\nMax 300 mots."
+          }
+        ]
+      }
+    },
+    {
+      "id": "repondre-telegram-risque",
+      "name": "Répondre risque Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "position": [1050, 450],
+      "parameters": {
+        "chatId": "={{$node['Extraire question risque'].json.chatId}}",
+        "text": "🛡️ *Évaluation du risque*\n\n={{$node['Agent Risque'].json.text}}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      }
+    },
+    {
+      "id": "message-aide",
+      "name": "Message d'aide",
+      "type": "n8n-nodes-base.telegram",
+      "position": [650, 600],
+      "parameters": {
+        "chatId": "={{$json.message.chat.id}}",
+        "text": "🤖 *Investisseur Afrique BRVM — Commandes disponibles*\n\n📚 `/apprendre [notion]`\nEx: `/apprendre dividende`\nEx: `/apprendre PER`\nEx: `/apprendre liquidité`\n\n🔍 `/analyse [TICKER]`\nEx: `/analyse SNTS`\nEx: `/analyse ETIT`\n\n🛡️ `/risque [question ou situation]`\nEx: `/risque je veux investir 500 000 FCFA sur SNTS`\n\n📊 Le rapport hebdomadaire arrive chaque dimanche soir.\n📈 La veille quotidienne arrive chaque soir à 18h.\n\n─────────────────\n⚠️ _Ce système est éducatif et informatif. Aucune recommandation n'est un conseil d'investissement. Vous êtes le seul décisionnaire._",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Écoute commandes Telegram": {
+      "main": [[{ "node": "Router selon commande", "type": "main", "index": 0 }]]
+    },
+    "Router selon commande": {
+      "main": [
+        [{ "node": "Extraire notion à apprendre", "type": "main", "index": 0 }],
+        [{ "node": "Extraire ticker pour analyse", "type": "main", "index": 0 }],
+        [{ "node": "Extraire question risque", "type": "main", "index": 0 }],
+        [{ "node": "Message d'aide", "type": "main", "index": 0 }]
+      ]
+    },
+    "Extraire notion à apprendre": {
+      "main": [[{ "node": "Agent Mentor (Claude)", "type": "main", "index": 0 }]]
+    },
+    "Agent Mentor (Claude)": {
+      "main": [
+        [{ "node": "Sauvegarder dans EDUCATION_BOURSE", "type": "main", "index": 0 }],
+        [{ "node": "Répondre sur Telegram", "type": "main", "index": 0 }]
+      ]
+    },
+    "Extraire ticker pour analyse": {
+      "main": [[{ "node": "Lire données action Watchlist", "type": "main", "index": 0 }]]
+    },
+    "Lire données action Watchlist": {
+      "main": [[{ "node": "Agent Analyste BRVM", "type": "main", "index": 0 }]]
+    },
+    "Agent Analyste BRVM": {
+      "main": [[{ "node": "Répondre analyse Telegram", "type": "main", "index": 0 }]]
+    },
+    "Extraire question risque": {
+      "main": [[{ "node": "Agent Risque", "type": "main", "index": 0 }]]
+    },
+    "Agent Risque": {
+      "main": [[{ "node": "Répondre risque Telegram", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

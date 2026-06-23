@@ -1,0 +1,204 @@
+{
+  "name": "C — Alerte Opportunité BRVM",
+  "meta": {
+    "description": "Chaque jour à 19h30 : détecte les signaux potentiels (baisse forte, dividende, communiqué) et envoie une alerte Telegram avec mise en garde obligatoire."
+  },
+  "nodes": [
+    {
+      "id": "trigger-cron",
+      "name": "Déclencheur 19h30",
+      "type": "n8n-nodes-base.cron",
+      "position": [200, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 19 * * 1-5"
+            }
+          ]
+        }
+      },
+      "notes": "Jours ouvrés uniquement (lundi-vendredi)"
+    },
+    {
+      "id": "lire-watchlist",
+      "name": "Lire WATCHLIST_BRVM",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [400, 300],
+      "parameters": {
+        "operation": "readAllRows",
+        "sheetId": "{{$env.SHEETS_ID}}",
+        "sheetName": "WATCHLIST_BRVM"
+      }
+    },
+    {
+      "id": "lire-portefeuille",
+      "name": "Lire PORTEFEUILLE",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [400, 450],
+      "parameters": {
+        "operation": "readAllRows",
+        "sheetId": "{{$env.SHEETS_ID}}",
+        "sheetName": "PORTEFEUILLE"
+      }
+    },
+    {
+      "id": "detecter-signaux",
+      "name": "Détecter signaux d'alerte",
+      "type": "n8n-nodes-base.code",
+      "position": [650, 350],
+      "parameters": {
+        "jsCode": "const watchlist = $node['Lire WATCHLIST_BRVM'].json;\nconst portefeuille = $node['Lire PORTEFEUILLE'].json;\n\nconst alertes = [];\n\n// Seuils de détection\nconst SEUIL_BAISSE_FORTE = -5;        // -5% sur la journée\nconst SEUIL_BAISSE_OPPORTUNITE = -10; // -10% sur 7 jours = possible opportunité\nconst SEUIL_HAUSSE_INHABITUELLE = 8;  // +8% sur la journée = surveiller\n\nif (!Array.isArray(watchlist)) return [{ json: { alertes: [] } }];\n\nwatchlist.forEach(action => {\n  const ticker = action.ticker || action.Ticker;\n  const variation_jour = parseFloat(action.variation_jour || 0);\n  const variation_7j = parseFloat(action.variation_7j || 0);\n  const variation_30j = parseFloat(action.variation_30j || 0);\n  const dividende = action.dividende_dernier || action.dividende;\n  const note = action.note_analyste || action.statut_agent;\n  \n  if (!ticker) return;\n\n  // Signal 1 : Baisse forte du jour (possible point d'entrée pour actions solides)\n  if (variation_jour <= SEUIL_BAISSE_FORTE && note !== 'eviter') {\n    alertes.push({\n      ticker,\n      type: 'baisse_forte',\n      message: `${ticker} en baisse de ${variation_jour}% aujourd'hui. Note analyste : ${note || 'N/A'}. Analyser si opportunité.`,\n      niveau: variation_jour < -8 ? 'élevé' : 'moyen',\n      action_recommandee: 'analyser_avant_toute_decision'\n    });\n  }\n\n  // Signal 2 : Baisse 7j sur action notée intéressante\n  if (variation_7j <= SEUIL_BAISSE_OPPORTUNITE && (note === 'interessante' || note === 'achat_progressif_possible')) {\n    alertes.push({\n      ticker,\n      type: 'repli_action_solide',\n      message: `${ticker} recule de ${variation_7j}% sur 7 jours mais est notée \"${note}\". Possible entrée à considérer après analyse approfondie.`,\n      niveau: 'moyen',\n      action_recommandee: 'analyser_et_attendre_confirmation'\n    });\n  }\n\n  // Signal 3 : Hausse inhabituelle (surveillance, pas d'action)\n  if (variation_jour >= SEUIL_HAUSSE_INHABITUELLE) {\n    alertes.push({\n      ticker,\n      type: 'variation_inhabituelle',\n      message: `${ticker} en hausse de +${variation_jour}% aujourd'hui. Variation inhabituelle, surveiller les nouvelles.`,\n      niveau: 'faible',\n      action_recommandee: 'surveiller_et_ne_pas_suivre_le_mouvement'\n    });\n  }\n\n  // Signal 4 : Dividende annoncé (si champ rempli récemment)\n  if (dividende && parseFloat(dividende) > 0 && action.source_dividende) {\n    alertes.push({\n      ticker,\n      type: 'dividende',\n      message: `${ticker} a annoncé un dividende de ${dividende} FCFA/action. Vérifier date de détachement.`,\n      niveau: 'faible',\n      action_recommandee: 'verifier_details_et_date_detachement'\n    });\n  }\n\n  // Signal 5 : Action en portefeuille avec baisse > 15%\n  if (Array.isArray(portefeuille)) {\n    const positionExistante = portefeuille.find(p => (p.ticker || p.Ticker) === ticker);\n    if (positionExistante) {\n      const gainPct = parseFloat(positionExistante.gain_perte_pct || 0);\n      if (gainPct <= -15) {\n        alertes.push({\n          ticker,\n          type: 'position_en_perte',\n          message: `ATTENTION : Votre position ${ticker} est en perte de ${gainPct}%. Revoir la thèse d'investissement.`,\n          niveau: 'élevé',\n          action_recommandee: 'revoir_these_investissement_ne_pas_paniquer'\n        });\n      }\n    }\n  }\n});\n\nreturn [{ json: { alertes, nb_alertes: alertes.length } }];"
+      }
+    },
+    {
+      "id": "verifier-alertes",
+      "name": "Y a-t-il des alertes ?",
+      "type": "n8n-nodes-base.if",
+      "position": [850, 350],
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$json.nb_alertes}}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "agent-risque",
+      "name": "Agent Risque — Valider alertes",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "position": [1050, 250],
+      "parameters": {
+        "model": "claude-sonnet-4-6",
+        "systemPrompt": "Tu es l'Agent Risque. Voir agents/PROMPTS_AGENTS.md. Tu filtres les signaux et ne valides que ceux qui méritent attention. Tu rappelles toujours les règles de protection du capital. Tu ne pousses jamais à l'achat.",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Voici les signaux détectés aujourd'hui :\n\n{{JSON.stringify($json.alertes, null, 2)}}\n\nPour chaque signal :\n1. Est-il pertinent à mentionner à un débutant ?\n2. Quel est le niveau de risque réel ?\n3. Quel message envoyer (court, clair, sans créer de panique ni d'enthousiasme excessif) ?\n\nRéponds en JSON :\n{\n  \"alertes_validees\": [\n    {\n      \"ticker\": \"...\",\n      \"type\": \"...\",\n      \"message_telegram\": \"...\",\n      \"niveau\": \"faible|moyen|élevé\",\n      \"mise_en_garde\": \"...\"\n    }\n  ],\n  \"message_global\": \"...\"\n}"
+          }
+        ]
+      }
+    },
+    {
+      "id": "parser-alertes",
+      "name": "Parser alertes validées",
+      "type": "n8n-nodes-base.code",
+      "position": [1250, 250],
+      "parameters": {
+        "jsCode": "const reponse = $input.first().json.text || $input.first().json.content || '';\n\nlet data;\ntry {\n  const jsonMatch = reponse.match(/\\{[\\s\\S]*\\}/);\n  data = jsonMatch ? JSON.parse(jsonMatch[0]) : { alertes_validees: [], message_global: reponse };\n} catch(e) {\n  data = { alertes_validees: [], message_global: reponse };\n}\n\nreturn [{ json: data }];"
+      }
+    },
+    {
+      "id": "sauvegarder-alertes",
+      "name": "Sauvegarder alertes dans Sheets",
+      "type": "n8n-nodes-base.code",
+      "position": [1450, 150],
+      "parameters": {
+        "jsCode": "// Préparer les lignes à insérer dans ALERTES\nconst alertes = $input.first().json.alertes_validees || [];\nreturn alertes.map(a => ({\n  json: {\n    date: new Date().toISOString(),\n    type_alerte: a.type,\n    ticker: a.ticker,\n    message: a.message_telegram,\n    niveau_risque: a.niveau,\n    action_recommandee: a.mise_en_garde || 'analyser avant toute décision',\n    statut: 'nouvelle',\n    source: 'Agent Risque n8n'\n  }\n}));"
+      }
+    },
+    {
+      "id": "ecrire-alertes-sheets",
+      "name": "Écrire alertes dans Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [1650, 150],
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "sheetId": "{{$env.SHEETS_ID}}",
+        "sheetName": "ALERTES",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date": "={{$json.date}}",
+            "type_alerte": "={{$json.type_alerte}}",
+            "ticker": "={{$json.ticker}}",
+            "message": "={{$json.message}}",
+            "niveau_risque": "={{$json.niveau_risque}}",
+            "action_recommandee": "={{$json.action_recommandee}}",
+            "statut": "={{$json.statut}}",
+            "source": "={{$json.source}}"
+          }
+        }
+      }
+    },
+    {
+      "id": "formater-telegram",
+      "name": "Formater message Telegram alertes",
+      "type": "n8n-nodes-base.code",
+      "position": [1450, 350],
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst alertes = data.alertes_validees || [];\n\nif (alertes.length === 0) {\n  return [{ json: { message: null } }];\n}\n\nconst niveauEmoji = { 'faible': '🟡', 'moyen': '🟠', 'élevé': '🔴' };\n\nconst alertesTexte = alertes.slice(0, 5).map(a => {\n  const emoji = niveauEmoji[a.niveau] || '⚪';\n  return `${emoji} *${a.ticker}* — ${a.type}\\n_${a.message_telegram}_\\n⚠️ ${a.mise_en_garde}`;\n}).join('\\n\\n');\n\nconst message = `🚨 *Signaux détectés — BRVM*\n_${new Date().toLocaleDateString('fr-FR')}_\n\n${alertesTexte}\n\n─────────────────\n🛑 *RAPPEL IMPORTANT :*\nCes signaux nécessitent une analyse approfondie avant toute décision.\n• Aucun achat ne doit être fait sur la base de ces alertes seules.\n• Consultez votre JOURNAL_DECISIONS avant d'agir.\n• En cas de doute : attendre.\n\n💡 _Investisseur Afrique BRVM_`;\n\nreturn [{ json: { message } }];"
+      }
+    },
+    {
+      "id": "envoyer-telegram",
+      "name": "Envoyer alerte Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "position": [1650, 350],
+      "parameters": {
+        "chatId": "{{$env.TELEGRAM_CHAT_ID}}",
+        "text": "={{$json.message}}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_web_page_preview": true
+        }
+      }
+    },
+    {
+      "id": "pas-d-alerte",
+      "name": "Aucune alerte aujourd'hui",
+      "type": "n8n-nodes-base.noOp",
+      "position": [1050, 500],
+      "notes": "Aucun signal détecté, le workflow s'arrête silencieusement."
+    }
+  ],
+  "connections": {
+    "Déclencheur 19h30": {
+      "main": [
+        [
+          { "node": "Lire WATCHLIST_BRVM", "type": "main", "index": 0 },
+          { "node": "Lire PORTEFEUILLE", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Lire WATCHLIST_BRVM": {
+      "main": [[{ "node": "Détecter signaux d'alerte", "type": "main", "index": 0 }]]
+    },
+    "Lire PORTEFEUILLE": {
+      "main": [[{ "node": "Détecter signaux d'alerte", "type": "main", "index": 0 }]]
+    },
+    "Détecter signaux d'alerte": {
+      "main": [[{ "node": "Y a-t-il des alertes ?", "type": "main", "index": 0 }]]
+    },
+    "Y a-t-il des alertes ?": {
+      "main": [
+        [{ "node": "Agent Risque — Valider alertes", "type": "main", "index": 0 }],
+        [{ "node": "Aucune alerte aujourd'hui", "type": "main", "index": 0 }]
+      ]
+    },
+    "Agent Risque — Valider alertes": {
+      "main": [[{ "node": "Parser alertes validées", "type": "main", "index": 0 }]]
+    },
+    "Parser alertes validées": {
+      "main": [
+        [{ "node": "Sauvegarder alertes dans Sheets", "type": "main", "index": 0 }],
+        [{ "node": "Formater message Telegram alertes", "type": "main", "index": 0 }]
+      ]
+    },
+    "Sauvegarder alertes dans Sheets": {
+      "main": [[{ "node": "Écrire alertes dans Sheets", "type": "main", "index": 0 }]]
+    },
+    "Formater message Telegram alertes": {
+      "main": [[{ "node": "Envoyer alerte Telegram", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

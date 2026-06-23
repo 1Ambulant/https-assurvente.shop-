@@ -1,0 +1,196 @@
+{
+  "name": "B — Rapport Hebdomadaire BRVM",
+  "meta": {
+    "description": "Chaque dimanche à 20h : lit Sheets, génère un rapport complet avec Agent Rapport, envoie sur Telegram, enregistre dans RAPPORTS_HEBDO."
+  },
+  "nodes": [
+    {
+      "id": "trigger-dimanche",
+      "name": "Déclencheur Dimanche 20h",
+      "type": "n8n-nodes-base.cron",
+      "position": [200, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 20 * * 0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "lire-watchlist",
+      "name": "Lire WATCHLIST_BRVM",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [400, 200],
+      "parameters": {
+        "operation": "readAllRows",
+        "sheetId": "{{$env.SHEETS_ID}}",
+        "sheetName": "WATCHLIST_BRVM"
+      }
+    },
+    {
+      "id": "lire-portefeuille",
+      "name": "Lire PORTEFEUILLE",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [400, 350],
+      "parameters": {
+        "operation": "readAllRows",
+        "sheetId": "{{$env.SHEETS_ID}}",
+        "sheetName": "PORTEFEUILLE"
+      }
+    },
+    {
+      "id": "lire-journal",
+      "name": "Lire JOURNAL_DECISIONS (30 derniers jours)",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [400, 500],
+      "parameters": {
+        "operation": "readAllRows",
+        "sheetId": "{{$env.SHEETS_ID}}",
+        "sheetName": "JOURNAL_DECISIONS"
+      }
+    },
+    {
+      "id": "lire-alertes",
+      "name": "Lire ALERTES de la semaine",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [400, 650],
+      "parameters": {
+        "operation": "readAllRows",
+        "sheetId": "{{$env.SHEETS_ID}}",
+        "sheetName": "ALERTES"
+      }
+    },
+    {
+      "id": "preparer-contexte",
+      "name": "Préparer contexte pour agent",
+      "type": "n8n-nodes-base.code",
+      "position": [650, 400],
+      "parameters": {
+        "jsCode": "const watchlist = $node['Lire WATCHLIST_BRVM'].json;\nconst portefeuille = $node['Lire PORTEFEUILLE'].json;\nconst journal = $node['Lire JOURNAL_DECISIONS (30 derniers jours)'].json;\nconst alertes = $node['Lire ALERTES de la semaine'].json;\n\n// Filtrer le journal des 30 derniers jours\nconst il_y_a_30j = new Date();\nil_y_a_30j.setDate(il_y_a_30j.getDate() - 30);\n\nconst journalRecent = Array.isArray(journal) \n  ? journal.filter(row => new Date(row.date) > il_y_a_30j)\n  : [];\n\n// Filtrer les alertes de la semaine\nconst il_y_a_7j = new Date();\nil_y_a_7j.setDate(il_y_a_7j.getDate() - 7);\n\nconst alertesRecentes = Array.isArray(alertes)\n  ? alertes.filter(row => new Date(row.date) > il_y_a_7j)\n  : [];\n\n// Calculer performance portefeuille\nlet valeurTotale = 0;\nlet coutTotal = 0;\nif (Array.isArray(portefeuille)) {\n  portefeuille.forEach(ligne => {\n    valeurTotale += parseFloat(ligne.valeur_actuelle || 0);\n    coutTotal += parseFloat(ligne.montant_investi || 0);\n  });\n}\n\nconst numSemaine = getISOWeek(new Date());\nconst annee = new Date().getFullYear();\n\nfunction getISOWeek(date) {\n  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));\n  const dayNum = d.getUTCDay() || 7;\n  d.setUTCDate(d.getUTCDate() + 4 - dayNum);\n  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));\n  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);\n}\n\nreturn [{\n  json: {\n    semaine: `Semaine ${numSemaine} - ${annee}`,\n    watchlist: watchlist,\n    portefeuille: portefeuille,\n    journalRecent: journalRecent,\n    alertesRecentes: alertesRecentes,\n    stats: {\n      valeurTotale: valeurTotale.toFixed(0),\n      coutTotal: coutTotal.toFixed(0),\n      gainPerte: (valeurTotale - coutTotal).toFixed(0),\n      gainPertePct: coutTotal > 0 ? ((valeurTotale - coutTotal) / coutTotal * 100).toFixed(2) : 0\n    }\n  }\n}];"
+      }
+    },
+    {
+      "id": "agent-rapport",
+      "name": "Agent Rapport (Claude)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "position": [900, 400],
+      "parameters": {
+        "model": "claude-sonnet-4-6",
+        "systemPrompt": "Tu es l'Agent Rapport. Voir agents/PROMPTS_AGENTS.md pour ton prompt complet. Tu produis des rapports hebdomadaires clairs, honnêtes et prudents pour un investisseur débutant en BRVM. Tu ne fais jamais de promesses de rendement. Tu cites tes sources. Tu termines toujours par une décision prudente parmi : attendre / surveiller / achat_progressif_possible / éviter.",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Génère le rapport hebdomadaire pour {{$json.semaine}}.\n\nDONNÉES :\n\nWatchlist BRVM :\n{{JSON.stringify($json.watchlist, null, 2).substring(0, 3000)}}\n\nPortefeuille actuel :\n{{JSON.stringify($json.portefeuille, null, 2).substring(0, 2000)}}\n\nStats portefeuille :\n- Valeur totale : {{$json.stats.valeurTotale}} FCFA\n- Coût total : {{$json.stats.coutTotal}} FCFA\n- Gain/Perte : {{$json.stats.gainPerte}} FCFA ({{$json.stats.gainPertePct}}%)\n\nJournal de décisions (30 derniers jours) :\n{{JSON.stringify($json.journalRecent, null, 2).substring(0, 1500)}}\n\nAlertes de la semaine :\n{{JSON.stringify($json.alertesRecentes, null, 2).substring(0, 1000)}}\n\nStructure du rapport attendue (JSON) :\n{\n  \"semaine\": \"...\",\n  \"resume_marche\": \"...\",\n  \"ce_qui_sest_passe\": \"...\",\n  \"ce_que_jai_appris\": \"...\",\n  \"actions_a_surveiller\": [\"...\"],\n  \"risques_identifies\": [\"...\"],\n  \"etat_portefeuille\": \"...\",\n  \"decision_recommandee\": \"attendre|surveiller|achat_progressif_possible|eviter\",\n  \"justification_decision\": \"...\",\n  \"actions_concretes\": [\"...\"],\n  \"note_apprentissage\": \"...\"\n}"
+          }
+        ]
+      }
+    },
+    {
+      "id": "parser-rapport",
+      "name": "Parser rapport JSON",
+      "type": "n8n-nodes-base.code",
+      "position": [1100, 400],
+      "parameters": {
+        "jsCode": "const reponse = $input.first().json.text || $input.first().json.content || '';\nconst semaine = $node['Préparer contexte pour agent'].json.semaine;\n\nlet rapport;\ntry {\n  const jsonMatch = reponse.match(/\\{[\\s\\S]*\\}/);\n  rapport = jsonMatch ? JSON.parse(jsonMatch[0]) : {};\n} catch(e) {\n  rapport = { resume_marche: reponse };\n}\n\nrapport.semaine = rapport.semaine || semaine;\nrapport.date_rapport = new Date().toISOString();\n\nreturn [{ json: rapport }];"
+      }
+    },
+    {
+      "id": "sauvegarder-rapport",
+      "name": "Sauvegarder dans RAPPORTS_HEBDO",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [1300, 300],
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "sheetId": "{{$env.SHEETS_ID}}",
+        "sheetName": "RAPPORTS_HEBDO",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "semaine": "={{$json.semaine}}",
+            "date_rapport": "={{$json.date_rapport}}",
+            "resume_marche": "={{$json.resume_marche}}",
+            "meilleures_opportunites": "={{($json.actions_a_surveiller || []).join(', ')}}",
+            "risques_identifies": "={{($json.risques_identifies || []).join(', ')}}",
+            "etat_portefeuille": "={{$json.etat_portefeuille}}",
+            "decision_recommandee": "={{$json.decision_recommandee}}",
+            "actions_a_faire": "={{($json.actions_concretes || []).join('\\n')}}",
+            "note_apprentissage": "={{$json.note_apprentissage}}"
+          }
+        },
+        "options": {
+          "locationDefine": "specifyRangeA1",
+          "matchingColumns": ["semaine"]
+        }
+      }
+    },
+    {
+      "id": "formater-telegram",
+      "name": "Formater rapport Telegram",
+      "type": "n8n-nodes-base.code",
+      "position": [1300, 500],
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\n\nconst decisionsEmoji = {\n  'attendre': '⏸️',\n  'surveiller': '👁️',\n  'achat_progressif_possible': '🟢',\n  'achat_progressif': '🟢',\n  'eviter': '🔴'\n};\n\nconst emoji = decisionsEmoji[r.decision_recommandee] || '⚪';\n\nconst surveiller = (r.actions_a_surveiller || []).slice(0, 3).map(a => `  • ${a}`).join('\\n');\nconst risques = (r.risques_identified || r.risques_identifies || []).slice(0, 3).map(r => `  ⚠️ ${r}`).join('\\n');\nconst actions = (r.actions_concretes || []).slice(0, 3).map(a => `  ✓ ${a}`).join('\\n');\n\nconst message = `📋 *Rapport Hebdomadaire — ${r.semaine || ''}*\n\n📊 *Ce qui s'est passé :*\n${(r.ce_qui_sest_passe || r.resume_marche || '').substring(0, 500)}\n\n🔍 *Actions à surveiller :*\n${surveiller || '  Aucune cette semaine'}\n\n⚠️ *Risques identifiés :*\n${risques || '  Aucun risque majeur'}\n\n💼 *Mon portefeuille :*\n${(r.etat_portefeuille || '').substring(0, 300)}\n\n${emoji} *Décision recommandée : ${(r.decision_recommandee || '').toUpperCase()}*\n_${(r.justification_decision || '').substring(0, 300)}_\n\n✅ *Actions concrètes :*\n${actions || '  Aucune action requise'}\n\n📚 *Ce que j'ai appris :*\n${(r.note_apprentissage || '').substring(0, 300)}\n\n─────────────────\n💡 _Analyse informative. Vous êtes le seul décisionnaire._\n🏦 _Investisseur Afrique BRVM_`;\n\nreturn [{ json: { message } }];"
+      }
+    },
+    {
+      "id": "envoyer-telegram",
+      "name": "Envoyer rapport Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "position": [1500, 500],
+      "parameters": {
+        "chatId": "{{$env.TELEGRAM_CHAT_ID}}",
+        "text": "={{$json.message}}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_web_page_preview": true
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Déclencheur Dimanche 20h": {
+      "main": [
+        [
+          { "node": "Lire WATCHLIST_BRVM", "type": "main", "index": 0 },
+          { "node": "Lire PORTEFEUILLE", "type": "main", "index": 0 },
+          { "node": "Lire JOURNAL_DECISIONS (30 derniers jours)", "type": "main", "index": 0 },
+          { "node": "Lire ALERTES de la semaine", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Lire WATCHLIST_BRVM": {
+      "main": [[{ "node": "Préparer contexte pour agent", "type": "main", "index": 0 }]]
+    },
+    "Lire PORTEFEUILLE": {
+      "main": [[{ "node": "Préparer contexte pour agent", "type": "main", "index": 0 }]]
+    },
+    "Lire JOURNAL_DECISIONS (30 derniers jours)": {
+      "main": [[{ "node": "Préparer contexte pour agent", "type": "main", "index": 0 }]]
+    },
+    "Lire ALERTES de la semaine": {
+      "main": [[{ "node": "Préparer contexte pour agent", "type": "main", "index": 0 }]]
+    },
+    "Préparer contexte pour agent": {
+      "main": [[{ "node": "Agent Rapport (Claude)", "type": "main", "index": 0 }]]
+    },
+    "Agent Rapport (Claude)": {
+      "main": [[{ "node": "Parser rapport JSON", "type": "main", "index": 0 }]]
+    },
+    "Parser rapport JSON": {
+      "main": [
+        [{ "node": "Sauvegarder dans RAPPORTS_HEBDO", "type": "main", "index": 0 }],
+        [{ "node": "Formater rapport Telegram", "type": "main", "index": 0 }]
+      ]
+    },
+    "Formater rapport Telegram": {
+      "main": [[{ "node": "Envoyer rapport Telegram", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

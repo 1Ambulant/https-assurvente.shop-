@@ -1,0 +1,216 @@
+{
+  "name": "A — Veille Quotidienne BRVM",
+  "meta": {
+    "description": "Chaque jour à 18h : récupère l'actualité BRVM, analyse avec l'agent IA, met à jour Sheets, envoie résumé Telegram."
+  },
+  "nodes": [
+    {
+      "id": "trigger-cron",
+      "name": "Déclencheur 18h",
+      "type": "n8n-nodes-base.cron",
+      "position": [200, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "minutesInterval": 0,
+              "hoursInterval": 18
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "lire-watchlist",
+      "name": "Lire WATCHLIST_BRVM",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [400, 300],
+      "parameters": {
+        "operation": "readAllRows",
+        "sheetId": "{{$env.SHEETS_ID}}",
+        "sheetName": "WATCHLIST_BRVM",
+        "options": {
+          "headerRow": true
+        }
+      }
+    },
+    {
+      "id": "lire-parametres",
+      "name": "Lire PARAMETRES",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [400, 450],
+      "parameters": {
+        "operation": "readAllRows",
+        "sheetId": "{{$env.SHEETS_ID}}",
+        "sheetName": "PARAMETRES"
+      }
+    },
+    {
+      "id": "fetch-brvm-info",
+      "name": "Récupérer actualités BRVM",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [600, 200],
+      "parameters": {
+        "method": "GET",
+        "url": "https://www.brvm.org/fr/cours-actions/0",
+        "options": {
+          "timeout": 30000
+        },
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (compatible; InvestisseurAfriqueBRVM/1.0)"
+        }
+      },
+      "notes": "Page publique BRVM. Si bloquée, utiliser une source RSS ou une API alternative comme africamarkets.net"
+    },
+    {
+      "id": "fetch-africa-markets",
+      "name": "Récupérer Africa Markets RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [600, 350],
+      "parameters": {
+        "method": "GET",
+        "url": "https://www.africamarkets.net/feed/",
+        "options": {
+          "timeout": 15000
+        }
+      }
+    },
+    {
+      "id": "fetch-jeuneafrique",
+      "name": "Actualités économiques Afrique",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [600, 500],
+      "parameters": {
+        "method": "GET",
+        "url": "https://www.jeuneafrique.com/economie/feed/",
+        "options": {
+          "timeout": 15000
+        }
+      }
+    },
+    {
+      "id": "agent-analyste",
+      "name": "Agent Analyste BRVM (Claude)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "position": [900, 300],
+      "parameters": {
+        "model": "claude-sonnet-4-6",
+        "systemPrompt": "Tu es l'Agent Analyste BRVM. Voir le fichier agents/PROMPTS_AGENTS.md pour ton prompt complet. Tu analyses uniquement les données BRVM fournies. Tu classes chaque action : éviter / surveiller / intéressante / achat_progressif_possible. Tu ne fais jamais de promesse de rendement. Tu cites toujours tes sources.",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Voici les données du jour :\n\nWATCHLIST actuelle :\n{{JSON.stringify($node['Lire WATCHLIST_BRVM'].json, null, 2)}}\n\nActualités BRVM :\n{{$node['Récupérer Africa Markets RSS'].json.body.substring(0, 3000)}}\n\nActualités économiques :\n{{$node['Actualités économiques Afrique'].json.body.substring(0, 2000)}}\n\nProduis :\n1. Résumé des mouvements importants du jour (max 300 mots)\n2. Pour chaque action de la watchlist : prix_estimé, variation_estimée, note (éviter/surveiller/intéressante/achat_progressif), commentaire court\n3. 1 à 3 points de vigilance du jour\n\nFormat de sortie : JSON strict avec les clés : resume_marche, actions (tableau), points_vigilance"
+          }
+        ]
+      }
+    },
+    {
+      "id": "parser-reponse",
+      "name": "Parser réponse JSON agent",
+      "type": "n8n-nodes-base.code",
+      "position": [1100, 300],
+      "parameters": {
+        "jsCode": "const reponse = $input.first().json.text || $input.first().json.content;\n\n// Extraire le JSON de la réponse\nlet data;\ntry {\n  // Chercher un bloc JSON dans la réponse\n  const jsonMatch = reponse.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    data = JSON.parse(jsonMatch[0]);\n  } else {\n    data = { resume_marche: reponse, actions: [], points_vigilance: [] };\n  }\n} catch(e) {\n  data = { resume_marche: reponse, actions: [], points_vigilance: [], erreur_parsing: e.message };\n}\n\nreturn [{ json: data }];"
+      }
+    },
+    {
+      "id": "maj-watchlist",
+      "name": "Mettre à jour WATCHLIST_BRVM",
+      "type": "n8n-nodes-base.code",
+      "position": [1100, 450],
+      "parameters": {
+        "jsCode": "// Prépare les mises à jour pour chaque action analysée\nconst data = $node['Parser réponse JSON agent'].json;\nconst actions = data.actions || [];\nconst updates = [];\n\nfor (const action of actions) {\n  if (action.ticker) {\n    updates.push({\n      ticker: action.ticker,\n      prix_actuel: action.prix_estime || '',\n      variation_jour: action.variation_estimee || '',\n      note_analyste: action.note || '',\n      commentaire: action.commentaire || '',\n      derniere_maj: new Date().toISOString()\n    });\n  }\n}\n\nreturn updates.map(u => ({ json: u }));"
+      }
+    },
+    {
+      "id": "ecrire-watchlist",
+      "name": "Écrire dans WATCHLIST_BRVM",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [1300, 450],
+      "parameters": {
+        "operation": "update",
+        "sheetId": "{{$env.SHEETS_ID}}",
+        "sheetName": "WATCHLIST_BRVM",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ticker": "={{$json.ticker}}",
+            "prix_actuel": "={{$json.prix_actuel}}",
+            "variation_jour": "={{$json.variation_jour}}",
+            "note_analyste": "={{$json.note_analyste}}",
+            "commentaire": "={{$json.commentaire}}",
+            "derniere_maj": "={{$json.derniere_maj}}"
+          }
+        },
+        "options": {
+          "locationDefine": "specifyRangeA1",
+          "matchingColumns": ["ticker"]
+        }
+      }
+    },
+    {
+      "id": "formater-telegram",
+      "name": "Formater message Telegram",
+      "type": "n8n-nodes-base.code",
+      "position": [1300, 300],
+      "parameters": {
+        "jsCode": "const data = $node['Parser réponse JSON agent'].json;\nconst date = new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });\n\nconst actions = (data.actions || []).slice(0, 5);\nconst notesEmojis = {\n  'eviter': '🔴',\n  'surveiller': '🟡',\n  'interessante': '🟢',\n  'achat_progressif': '✅',\n  'achat_progressif_possible': '✅'\n};\n\nlet actionsTexte = actions.map(a => {\n  const emoji = notesEmojis[a.note] || '⚪';\n  return `${emoji} *${a.ticker}* — ${a.note || '?'}: ${a.commentaire || ''}`;\n}).join('\\n');\n\nif (!actionsTexte) actionsTexte = '_Aucune donnée disponible_';\n\nconst vigilance = (data.points_vigilance || []).slice(0, 3).map(p => `⚠️ ${p}`).join('\\n');\n\nconst message = `📊 *Veille BRVM — ${date}*\n\n📝 *Résumé du marché :*\n${(data.resume_marche || 'Pas de données').substring(0, 600)}\n\n🔍 *Watchlist (top 5) :*\n${actionsTexte}\n\n${vigilance ? '⚠️ *Points de vigilance :*\\n' + vigilance : ''}\n\n─────────────────\n💡 _Ceci est une analyse informative. Aucune décision d'achat ne doit être prise sans votre propre analyse._\n🏦 _Investisseur Afrique BRVM_`;\n\nreturn [{ json: { message } }];"
+      }
+    },
+    {
+      "id": "envoyer-telegram",
+      "name": "Envoyer résumé Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "position": [1500, 300],
+      "parameters": {
+        "chatId": "{{$env.TELEGRAM_CHAT_ID}}",
+        "text": "={{$json.message}}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_web_page_preview": true
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Déclencheur 18h": {
+      "main": [
+        [
+          { "node": "Lire WATCHLIST_BRVM", "type": "main", "index": 0 },
+          { "node": "Lire PARAMETRES", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Lire WATCHLIST_BRVM": {
+      "main": [[{ "node": "Récupérer actualités BRVM", "type": "main", "index": 0 }]]
+    },
+    "Récupérer actualités BRVM": {
+      "main": [[{ "node": "Récupérer Africa Markets RSS", "type": "main", "index": 0 }]]
+    },
+    "Récupérer Africa Markets RSS": {
+      "main": [[{ "node": "Actualités économiques Afrique", "type": "main", "index": 0 }]]
+    },
+    "Actualités économiques Afrique": {
+      "main": [[{ "node": "Agent Analyste BRVM (Claude)", "type": "main", "index": 0 }]]
+    },
+    "Agent Analyste BRVM (Claude)": {
+      "main": [[{ "node": "Parser réponse JSON agent", "type": "main", "index": 0 }]]
+    },
+    "Parser réponse JSON agent": {
+      "main": [
+        [{ "node": "Mettre à jour WATCHLIST_BRVM", "type": "main", "index": 0 }],
+        [{ "node": "Formater message Telegram", "type": "main", "index": 0 }]
+      ]
+    },
+    "Mettre à jour WATCHLIST_BRVM": {
+      "main": [[{ "node": "Écrire dans WATCHLIST_BRVM", "type": "main", "index": 0 }]]
+    },
+    "Formater message Telegram": {
+      "main": [[{ "node": "Envoyer résumé Telegram", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
