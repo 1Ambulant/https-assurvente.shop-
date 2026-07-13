@@ -51,7 +51,16 @@ const CATEGORY_TREE = [
       {
         id: "auto-moteur",
         label: "Moteur",
-        children: ["Filtres", "Courroies", "Joint moteur", "Bougies", "Turbo"],
+        children: [
+          "Filtres",
+          "Courroies",
+          "Joint moteur",
+          "Bougies",
+          "Turbo",
+          "Moteurs complets",
+          "Boîtes de vitesse",
+          "Culasse",
+        ],
       },
       {
         id: "auto-freinage",
@@ -70,8 +79,13 @@ const CATEGORY_TREE = [
       },
       {
         id: "auto-carrosserie",
-        label: "Carrosserie",
-        children: ["Pare-chocs", "Rétroviseurs", "Optiques", "Pare-brise"],
+        label: "Carrosserie & Accessoires",
+        children: ["Rétroviseurs", "Phares", "Pare-chocs", "Autoradios/GPS", "Jantes"],
+      },
+      {
+        id: "auto-echappement",
+        label: "Échappement",
+        children: ["Pot catalytique", "Silencieux"],
       },
     ],
   },
@@ -84,6 +98,11 @@ const CATEGORY_TREE = [
         id: "moto-moteur",
         label: "Moteur",
         children: ["Carburateur", "Chaîne", "Pignons", "Bougies"],
+      },
+      {
+        id: "moto-moteurs-complets",
+        label: "Moteurs moto",
+        children: ["Moteur complet", "Culasse", "Carter moteur", "Vilebrequin"],
       },
       {
         id: "moto-freinage",
@@ -100,6 +119,16 @@ const CATEGORY_TREE = [
         label: "Électricité",
         children: ["Batteries", "Bobines", "Phares"],
       },
+      {
+        id: "moto-chaines",
+        label: "Chaînes & Couronnes",
+        children: ["Chaîne", "Couronne", "Pignon"],
+      },
+      {
+        id: "moto-carenages",
+        label: "Carénages",
+        children: ["Carénage avant", "Carénage arrière", "Kit carénage complet"],
+      },
     ],
   },
 ];
@@ -107,12 +136,12 @@ const CATEGORY_TREE = [
 const PRODUCTS = [
   {
     id: 1,
-    name: "Kit Plaquettes Avant (Hilux 15-23)",
+    name: "Kit Plaquettes Avant (Hilux)",
     price: 18000,
     badge: "NEUF",
     badgeColor: "bg-emerald-500",
     rating: 4.8,
-    img: "🛡️",
+    image: "https://images.unsplash.com/photo-1600712242805-5f78671b24da?w=400&h=300&fit=crop",
   },
   {
     id: 2,
@@ -121,30 +150,37 @@ const PRODUCTS = [
     badge: "OCCASION",
     badgeColor: "bg-yellow-500",
     rating: 4.3,
-    img: "🔋",
+    image: "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400&h=300&fit=crop",
   },
   {
     id: 3,
-    name: "Alternateur (Mercedes ML)",
-    price: 45000,
+    name: "Moteur Essence (Mercedes ML)",
+    price: 1500000,
     badge: "RECONDITIONNÉ",
     badgeColor: "bg-sky-500",
     rating: 4.6,
-    img: "⚙️",
+    image: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=400&h=300&fit=crop",
   },
   {
     id: 4,
-    name: "Amortisseur AR (Duster)",
-    price: 32000,
+    name: "Kit Chaîne Moto (Yamaha DT)",
+    price: 15000,
     badge: "NEUF",
     badgeColor: "bg-emerald-500",
     rating: 4.9,
-    img: "🔧",
+    image: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&h=300&fit=crop",
   },
 ];
 
 const MECHANICS_OFFERS = [
-  { id: 1, name: "Moussa D.", rating: 4.9, eta: "8 min", price: 12000 },
+  {
+    id: 1,
+    name: "Moussa D.",
+    rating: 4.9,
+    eta: "8 min",
+    price: 12000,
+    avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop",
+  },
   { id: 2, name: "Ibrahima F.", rating: 4.7, eta: "12 min", price: 10000 },
   { id: 3, name: "Cheikh T.", rating: 4.8, eta: "15 min", price: 9500 },
 ];
@@ -160,11 +196,12 @@ const ADMIN_USERS = [
   },
   {
     id: 2,
-    name: "Moussa Diallo",
+    name: "Djiby Faye",
     role: "ADMIN",
     roleColor: "bg-sky-500",
     access: "Limité",
     editable: true,
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
     permissions: {
       interventions: true,
       pieces: true,
@@ -175,6 +212,32 @@ const ADMIN_USERS = [
 ];
 
 const fmtFCFA = (n) => `${n.toLocaleString("fr-FR")} FCFA`;
+
+/* -------------------------------------------------------------------------
+   IMAGE AVEC REPLI GRACIEUX (photo indisponible → icône + dégradé)
+   ------------------------------------------------------------------------- */
+
+function ImgWithFallback({ src, alt, className, fallbackIcon: FallbackIcon }) {
+  const [errored, setErrored] = useState(false);
+
+  if (errored) {
+    return (
+      <div className={`flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-700 ${className}`}>
+        <FallbackIcon className="text-slate-500" size={28} />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      loading="lazy"
+      onError={() => setErrored(true)}
+    />
+  );
+}
 
 /* -------------------------------------------------------------------------
    COMPOSANT RACINE
@@ -375,26 +438,33 @@ function LandingView({ cartCount, onOpenDrawer, onUrgence, onEnterAdmin, onGoCha
 
 function ProductCard({ product }) {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-lg shadow-black/50 hover:border-slate-700 transition-colors">
-      <div className="relative bg-slate-800 rounded-lg h-24 flex items-center justify-center text-4xl mb-2">
-        {product.img}
+    <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg shadow-black/50 hover:border-slate-700 transition-colors">
+      <div className="relative h-40">
+        <ImgWithFallback
+          src={product.image}
+          alt={product.name}
+          className="h-40 w-full object-cover rounded-t-xl"
+          fallbackIcon={Package}
+        />
         <span
-          className={`absolute top-1.5 left-1.5 ${product.badgeColor} text-white text-[9px] font-bold px-2 py-0.5 rounded-full`}
+          className={`absolute top-2 left-2 ${product.badgeColor} text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg shadow-black/50`}
         >
           {product.badge}
         </span>
       </div>
-      <p className="text-xs font-medium leading-snug line-clamp-2 min-h-[2rem]">
-        {product.name}
-      </p>
-      <div className="flex items-center gap-1 mt-1 text-[11px] text-slate-400">
-        <Star size={11} className="fill-yellow-500 text-yellow-500" />
-        {product.rating}
-      </div>
-      <div className="flex items-center justify-between mt-2">
-        <span className="text-sm font-bold text-orange-500">
-          {fmtFCFA(product.price)}
-        </span>
+      <div className="p-3">
+        <p className="text-xs font-medium leading-snug line-clamp-2 min-h-[2rem]">
+          {product.name}
+        </p>
+        <div className="flex items-center gap-1 mt-1 text-[11px] text-slate-400">
+          <Star size={11} className="fill-yellow-500 text-yellow-500" />
+          {product.rating}
+        </div>
+        <div className="flex items-center justify-between mt-2">
+          <span className="text-sm font-bold text-orange-500">
+            {fmtFCFA(product.price)}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -604,8 +674,12 @@ function AuthView({ onValidated, onBack }) {
 
 function ChatBiddingView({ onBack, onAccept }) {
   const [messages] = useState([
-    { from: "system", text: "Recherche de mécaniciens disponibles autour de vous…" },
-    { from: "system", text: "3 mécaniciens ont répondu à votre demande." },
+    { text: "Recherche de mécaniciens disponibles autour de vous…" },
+    { text: "3 mécaniciens ont répondu à votre demande." },
+    {
+      text: "Moussa D., le mieux noté, peut intervenir en premier.",
+      mechanicAvatar: MECHANICS_OFFERS[0].avatar,
+    },
   ]);
 
   return (
@@ -624,11 +698,22 @@ function ChatBiddingView({ onBack, onAccept }) {
 
       <div className="flex-1 px-4 py-4 space-y-3">
         {messages.map((m, i) => (
-          <div
-            key={i}
-            className="bg-slate-800 text-slate-300 text-xs rounded-xl px-3 py-2 max-w-[85%]"
-          >
-            {m.text}
+          <div key={i} className="flex items-end gap-2">
+            {m.mechanicAvatar ? (
+              <ImgWithFallback
+                src={m.mechanicAvatar}
+                alt="Mécanicien"
+                className="w-8 h-8 rounded-full object-cover shrink-0"
+                fallbackIcon={Wrench}
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+                FM
+              </div>
+            )}
+            <div className="bg-slate-800 text-slate-300 text-xs rounded-xl px-3 py-2 max-w-[85%]">
+              {m.text}
+            </div>
           </div>
         ))}
 
@@ -1055,7 +1140,15 @@ function AdminPieces() {
               {PRODUCTS.map((p) => (
                 <tr key={p.id} className="border-t border-slate-800">
                   <td className="px-4 py-3 flex items-center gap-2 whitespace-nowrap">
-                    <span className="text-xl">{p.img}</span> {p.name}
+                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-800 shrink-0">
+                      <ImgWithFallback
+                        src={p.image}
+                        alt={p.name}
+                        className="w-10 h-10 object-cover"
+                        fallbackIcon={Package}
+                      />
+                    </div>
+                    {p.name}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full text-white ${p.badgeColor}`}>
@@ -1219,9 +1312,18 @@ function AdminRoles() {
             {ADMIN_USERS.map((u) => (
               <tr key={u.id} className="border-t border-slate-800">
                 <td className="px-4 py-3 font-medium flex items-center gap-2 whitespace-nowrap">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-500 to-sky-500 flex items-center justify-center text-[10px] font-bold shrink-0">
-                    {u.name.split(" ")[0][0]}
-                  </div>
+                  {u.avatar ? (
+                    <ImgWithFallback
+                      src={u.avatar}
+                      alt={u.name}
+                      className="w-7 h-7 rounded-full object-cover shrink-0"
+                      fallbackIcon={Users}
+                    />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-500 to-sky-500 flex items-center justify-center text-[10px] font-bold shrink-0">
+                      {u.name.split(" ")[0][0]}
+                    </div>
+                  )}
                   {u.name}
                 </td>
                 <td className="px-4 py-3">
