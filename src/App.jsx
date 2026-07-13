@@ -831,26 +831,28 @@ function AuthView({ onValidated, onBack }) {
 /* --------------- VUE 3 : CHAT LINGUA — COMPARATEUR D'URGENCE -------------- */
 
 const PART_OFFERS = [
-  { id: "p1", title: "Ibrahima Pièces", meta: "1.2 km", price: 40000 },
-  { id: "p2", title: "Auto-Services", meta: "2.5 km", price: 42000 },
-  { id: "p3", title: "Casse Diop", meta: "3.1 km", price: 35000, tag: "OCCASION" },
+  { id: "p1", title: "Ibrahima Pièces", meta: "À 1.2 km - Keur Massar", price: 40000 },
+  { id: "p2", title: "Auto-Services", meta: "À 2.5 km - Keur Massar", price: 42000 },
+  { id: "p3", title: "Casse Diop", meta: "À 3.1 km - Keur Massar", price: 35000, tag: "OCCASION" },
 ];
 
 const MECHANIC_OFFERS_SCRIPT = [
-  { id: "m1", title: "Mamadou Dépannage", meta: "2 km", price: 15000, rating: 4.8 },
-  { id: "m2", title: "Garage Sérère Auto", meta: "3 km", price: 20000, rating: 4.9 },
-  { id: "m3", title: "Omar Mécanique", meta: "4 km", price: 12000, tag: "NOUVEAU" },
+  { id: "m1", title: "Mamadou Dépannage", meta: "À 2 km - Keur Massar", price: 15000, rating: 4.8 },
+  { id: "m2", title: "Garage Sérère Auto", meta: "À 3 km - Keur Massar", price: 20000, rating: 4.9 },
+  { id: "m3", title: "Omar Mécanique", meta: "À 4 km - Keur Massar", price: 12000, tag: "NOUVEAU" },
 ];
 
 const SELECTED_PART = PART_OFFERS[2]; // Casse Diop, 35 000 FCFA
 const SELECTED_MECHANIC = MECHANIC_OFFERS_SCRIPT[2]; // Omar Mécanique, 12 000 FCFA
 const MISSION_TOTAL = SELECTED_PART.price + SELECTED_MECHANIC.price;
+const OEM_REFERENCE = "5Q0915105C";
 
 function OfferMiniCard({ title, meta, price, tag, rating }) {
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-3 flex items-center justify-between gap-3">
       <div className="min-w-0">
         <div className="flex items-center gap-1.5 flex-wrap">
+          <Lock size={11} className="text-slate-500 shrink-0" />
           <p className="text-sm font-semibold truncate">{title}</p>
           {tag && (
             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-yellow-500 text-slate-950 shrink-0">
@@ -934,7 +936,31 @@ function ChatBiddingView({ onBack, onAccept }) {
           </div>
         </IaMessage>
 
-        {/* 2. Flash-Bidding Pièces */}
+        {/* 2. Scraping Auto-Doc (expertise cachée) */}
+        <IaMessage label="🧠 Analyse : Clic-clac = Batterie. Je scanne les catalogues internationaux pour trouver la référence exacte…" />
+        <IaMessage>
+          <div className="bg-slate-800 border border-slate-700 rounded-xl p-3">
+            <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wide mb-1">
+              ✅ Référence OEM trouvée (Scraping)
+            </p>
+            <p className="text-sm font-mono font-bold text-white">{OEM_REFERENCE}</p>
+            <p className="text-[11px] text-slate-400 mt-1">
+              C'est le modèle exact pour votre Polo 6 TSI.
+            </p>
+          </div>
+        </IaMessage>
+        <IaMessage label="J'ai envoyé cette référence ET la photo de la pièce aux vendeurs de la zone par WhatsApp. Ils ne peuvent pas se tromper de modèle.">
+          <div className="flex gap-2">
+            <span className="text-[10px] font-mono bg-slate-800 border border-slate-700 rounded-full px-2.5 py-1 text-slate-300">
+              📎 {OEM_REFERENCE}
+            </span>
+            <span className="text-[10px] bg-slate-800 border border-slate-700 rounded-full px-2.5 py-1 text-slate-300">
+              📷 Photo pièce envoyée
+            </span>
+          </div>
+        </IaMessage>
+
+        {/* 3. Flash-Bidding Pièces (masking total) */}
         <IaMessage label="📍 Recherche des pièces dans un rayon de 5 km…" />
         <IaMessage label="✅ 3 vendeurs partenaires ont la batterie 70Ah. J'en scanne aussi 2 vendeurs non-inscrits à Keur Massar pour vous faire le meilleur prix.">
           <div className="space-y-2">
@@ -955,7 +981,7 @@ function ChatBiddingView({ onBack, onAccept }) {
           </div>
         </IaMessage>
 
-        {/* 3. Flash-Bidding Main d'œuvre */}
+        {/* 4. Flash-Bidding Main d'œuvre (masking total) */}
         <IaMessage label="🔧 Mécaniciens disponibles pour le remplacement immédiat :">
           <div className="space-y-2">
             {MECHANIC_OFFERS_SCRIPT.map((o) => (
@@ -963,9 +989,9 @@ function ChatBiddingView({ onBack, onAccept }) {
             ))}
           </div>
         </IaMessage>
-        <IaMessage label="Vous pouvez aussi consulter des mécaniciens plus éloignés, mais le délai d'attente augmentera." />
+        <IaMessage label="Vous pouvez aussi consulter des mécaniciens plus éloignés, mais le délai d'attente augmentera. 🔒 Les coordonnées restent masquées jusqu'au paiement." />
 
-        {/* 4. Validation & paiement ferme */}
+        {/* 5. Validation & paiement ferme */}
         <IaMessage label="Faites votre choix. Une fois sélectionnés, les prix sont figés. Zéro négociation sur site, zéro surprise. Si un autre problème est trouvé, le mécano doit redemander un diagnostic via l'application." />
         <IaMessage label="Vous avez sélectionné :">
           <div className="bg-slate-800 border border-emerald-500/40 rounded-xl p-3 space-y-1.5">
@@ -990,6 +1016,7 @@ function ChatBiddingView({ onBack, onAccept }) {
           onClick={() =>
             onAccept({
               name: SELECTED_MECHANIC.title,
+              vendorName: SELECTED_PART.title,
               eta: "12 min",
               price: MISSION_TOTAL,
               breakdown: `${SELECTED_PART.title} (${fmtFCFA(SELECTED_PART.price)}) + Main d'œuvre ${SELECTED_MECHANIC.title} (${fmtFCFA(SELECTED_MECHANIC.price)})`,
@@ -1009,6 +1036,7 @@ function ChatBiddingView({ onBack, onAccept }) {
 function EscrowView({ mechanic, onBack, onPaid }) {
   const [method, setMethod] = useState("wave");
   const [processing, setProcessing] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const methods = [
     { id: "wave", label: "Wave", color: "border-sky-500" },
@@ -1020,7 +1048,7 @@ function EscrowView({ mechanic, onBack, onPaid }) {
     setProcessing(true);
     setTimeout(() => {
       setProcessing(false);
-      onPaid();
+      setShowConfirmation(true);
     }, 1200);
   };
 
@@ -1094,6 +1122,46 @@ function EscrowView({ mechanic, onBack, onPaid }) {
       <div className="flex items-center gap-2 mt-4 text-[11px] text-slate-500">
         <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
         Remboursement automatique si le mécanicien ne se présente pas.
+      </div>
+
+      {showConfirmation && (
+        <PaymentConfirmationModal mechanic={mechanic} onContinue={onPaid} />
+      )}
+    </div>
+  );
+}
+
+function PaymentConfirmationModal({ mechanic, onContinue }) {
+  return (
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center px-4">
+      <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-md p-6 shadow-lg shadow-black/50">
+        <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center mb-4">
+          <ShieldCheck className="text-emerald-500" size={24} />
+        </div>
+
+        <p className="text-sm font-semibold mb-3">
+          💰 Paiement de {fmtFCFA(mechanic?.price || 0)} reçu et bloqué.
+        </p>
+        <p className="text-xs text-slate-300 leading-relaxed mb-4">
+          📞 Votre numéro est en train d'être transmis au mécano{" "}
+          <span className="font-semibold text-white">{mechanic?.name}</span> et au vendeur{" "}
+          <span className="font-semibold text-white">{mechanic?.vendorName}</span>…
+        </p>
+
+        <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-3 flex items-start gap-2 mb-5">
+          <span className="text-sm shrink-0">⚠️</span>
+          <p className="text-[11px] text-orange-300 leading-relaxed">
+            Rappel : toute transaction en dehors de l'application annule votre garantie et
+            votre remboursement.
+          </p>
+        </div>
+
+        <button
+          onClick={onContinue}
+          className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-xl transition-colors"
+        >
+          Compris, j'attends le mécano
+        </button>
       </div>
     </div>
   );
