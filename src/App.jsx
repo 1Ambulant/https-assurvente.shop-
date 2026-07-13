@@ -30,6 +30,7 @@ import {
   MessageCircle,
   AlertTriangle,
   BadgeCheck,
+  Menu,
 } from "lucide-react";
 
 /* =========================================================================
@@ -207,7 +208,10 @@ function MobileApp({ onEnterAdmin }) {
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-      <div className="w-full max-w-[430px] min-h-screen bg-slate-950 text-white relative shadow-2xl shadow-black/50 overflow-hidden">
+      <div className="w-full max-w-[430px] min-h-screen bg-slate-950 text-white relative shadow-2xl shadow-black/50 overflow-hidden transform">
+        {/* `transform` établit un nouveau bloc de positionnement pour que les descendants
+            en `fixed` (FAB, drawer) restent confinés à la carte mobile 430px, même sur
+            un écran desktop large, au lieu de se coller aux bords de la fenêtre. */}
         {/* Barre urgence flottante persistante (sauf sur la landing où elle est le hero) */}
         {currentView !== "landing" && currentView !== "auth" && (
           <UrgencyFAB onClick={() => goTo("chat")} />
@@ -833,6 +837,7 @@ function TrackingView({ mechanic, onBack }) {
 
 function AdminBackOffice({ onExitAdmin }) {
   const [adminView, setAdminView] = useState("dashboard");
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const menuItems = [
     { id: "dashboard", label: "Tableau de bord", icon: LayoutDashboard },
@@ -842,67 +847,107 @@ function AdminBackOffice({ onExitAdmin }) {
     { id: "roles", label: "Rôles & Permissions", icon: Users },
   ];
 
+  const selectView = (id) => {
+    setAdminView(id);
+    setMobileNavOpen(false);
+  };
+
+  const currentLabel = menuItems.find((m) => m.id === adminView)?.label;
+
+  const SidebarContent = () => (
+    <>
+      <div className="px-5 py-5 border-b border-slate-800 flex items-center gap-2">
+        <Zap className="text-orange-500 fill-orange-500" size={22} />
+        <span className="font-bold text-sm">FlashMecano Admin</span>
+      </div>
+
+      <nav className="flex-1 px-3 py-4 space-y-1">
+        {menuItems.map((item) => {
+          const Icon = item.icon;
+          const active = adminView === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => selectView(item.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                active
+                  ? "bg-orange-500 text-white"
+                  : "text-slate-400 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              <Icon size={17} />
+              {item.label}
+            </button>
+          );
+        })}
+      </nav>
+
+      <div className="p-3 border-t border-slate-800">
+        <button
+          onClick={onExitAdmin}
+          className="w-full text-xs text-slate-500 hover:text-slate-300 py-2 transition-colors"
+        >
+          ← Retour à l'application mobile
+        </button>
+      </div>
+    </>
+  );
+
   return (
-    <div className="w-full h-screen bg-slate-950 text-white flex overflow-hidden">
-      {/* Sidebar */}
-      <div className="w-64 shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col">
-        <div className="px-5 py-5 border-b border-slate-800 flex items-center gap-2">
-          <Zap className="text-orange-500 fill-orange-500" size={22} />
-          <span className="font-bold text-sm">FlashMecano Admin</span>
-        </div>
+    <div className="w-full h-screen bg-slate-950 text-white flex overflow-hidden transform">
+      {/* Sidebar statique (desktop, lg+) */}
+      <div className="hidden lg:flex w-64 shrink-0 bg-slate-900 border-r border-slate-800 flex-col">
+        <SidebarContent />
+      </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const active = adminView === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setAdminView(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  active
-                    ? "bg-orange-500 text-white"
-                    : "text-slate-400 hover:bg-slate-800 hover:text-white"
-                }`}
-              >
-                <Icon size={17} />
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
-
-        <div className="p-3 border-t border-slate-800">
-          <button
-            onClick={onExitAdmin}
-            className="w-full text-xs text-slate-500 hover:text-slate-300 py-2 transition-colors"
-          >
-            ← Retour à l'application mobile
-          </button>
-        </div>
+      {/* Sidebar mobile/tablette : panneau glissant + overlay (sous lg) */}
+      <div
+        onClick={() => setMobileNavOpen(false)}
+        className={`lg:hidden fixed inset-0 bg-black/60 z-40 transition-opacity duration-300 ${
+          mobileNavOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+      />
+      <div
+        className={`lg:hidden fixed top-0 left-0 h-full w-64 max-w-[80%] bg-slate-900 border-r border-slate-800 z-50 flex flex-col transition-transform duration-300 ease-in-out ${
+          mobileNavOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <SidebarContent />
       </div>
 
       {/* Contenu */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Header */}
-        <div className="h-16 shrink-0 border-b border-slate-800 flex items-center justify-between px-6">
-          <div>
-            <p className="text-sm text-slate-400">Bienvenue,</p>
-            <p className="font-semibold text-sm">Administrateur</p>
+        <div className="h-16 shrink-0 border-b border-slate-800 flex items-center justify-between px-4 lg:px-6 gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={() => setMobileNavOpen(true)}
+              className="lg:hidden shrink-0 text-slate-400 hover:text-white transition-colors"
+              aria-label="Ouvrir le menu"
+            >
+              <Menu size={22} />
+            </button>
+            <div className="min-w-0">
+              <p className="text-sm text-slate-400 hidden sm:block">Bienvenue,</p>
+              <p className="font-semibold text-sm truncate">
+                <span className="sm:hidden">{currentLabel}</span>
+                <span className="hidden sm:inline">Administrateur</span>
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 shrink-0">
             <button className="relative text-slate-400 hover:text-white transition-colors">
               <Bell size={19} />
               <span className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full" />
             </button>
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-500 to-sky-500 flex items-center justify-center text-xs font-bold">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-500 to-sky-500 flex items-center justify-center text-xs font-bold shrink-0">
               SA
             </div>
           </div>
         </div>
 
         {/* Vue dynamique */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 lg:p-6">
           {adminView === "dashboard" && <AdminDashboardHome />}
           {adminView === "interventions" && <AdminInterventions />}
           {adminView === "pieces" && <AdminPieces />}
@@ -929,7 +974,7 @@ function AdminDashboardHome() {
       <h1 className="text-xl font-bold mb-1">Tableau de bord</h1>
       <p className="text-sm text-slate-400 mb-6">Vue d'ensemble de l'activité FlashMecano</p>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((s) => (
           <div
             key={s.label}
@@ -958,32 +1003,34 @@ function AdminInterventions() {
       <h1 className="text-xl font-bold mb-1">Interventions</h1>
       <p className="text-sm text-slate-400 mb-6">Suivi des dépannages en temps réel</p>
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-800/50 text-slate-400 text-xs uppercase">
-            <tr>
-              <th className="text-left px-4 py-3 font-medium">Réf.</th>
-              <th className="text-left px-4 py-3 font-medium">Client</th>
-              <th className="text-left px-4 py-3 font-medium">Mécanicien</th>
-              <th className="text-left px-4 py-3 font-medium">Statut</th>
-              <th className="text-right px-4 py-3 font-medium">Montant</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className="border-t border-slate-800">
-                <td className="px-4 py-3 font-medium">{r.id}</td>
-                <td className="px-4 py-3 text-slate-300">{r.client}</td>
-                <td className="px-4 py-3 text-slate-300">{r.mecano}</td>
-                <td className="px-4 py-3">
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusColor(r.statut)}`}>
-                    {r.statut}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right font-semibold">{fmtFCFA(r.montant)}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-800/50 text-slate-400 text-xs uppercase">
+              <tr>
+                <th className="text-left px-4 py-3 font-medium">Réf.</th>
+                <th className="text-left px-4 py-3 font-medium">Client</th>
+                <th className="text-left px-4 py-3 font-medium">Mécanicien</th>
+                <th className="text-left px-4 py-3 font-medium">Statut</th>
+                <th className="text-right px-4 py-3 font-medium">Montant</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id} className="border-t border-slate-800">
+                  <td className="px-4 py-3 font-medium">{r.id}</td>
+                  <td className="px-4 py-3 text-slate-300">{r.client}</td>
+                  <td className="px-4 py-3 text-slate-300">{r.mecano}</td>
+                  <td className="px-4 py-3">
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusColor(r.statut)}`}>
+                      {r.statut}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right font-semibold">{fmtFCFA(r.montant)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
@@ -995,32 +1042,34 @@ function AdminPieces() {
       <h1 className="text-xl font-bold mb-1">Pièces</h1>
       <p className="text-sm text-slate-400 mb-6">Catalogue des pièces détachées en vente</p>
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-800/50 text-slate-400 text-xs uppercase">
-            <tr>
-              <th className="text-left px-4 py-3 font-medium">Pièce</th>
-              <th className="text-left px-4 py-3 font-medium">État</th>
-              <th className="text-right px-4 py-3 font-medium">Prix</th>
-            </tr>
-          </thead>
-          <tbody>
-            {PRODUCTS.map((p) => (
-              <tr key={p.id} className="border-t border-slate-800">
-                <td className="px-4 py-3 flex items-center gap-2">
-                  <span className="text-xl">{p.img}</span> {p.name}
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full text-white ${p.badgeColor}`}>
-                    {p.badge}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right font-semibold text-orange-500">
-                  {fmtFCFA(p.price)}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-800/50 text-slate-400 text-xs uppercase">
+              <tr>
+                <th className="text-left px-4 py-3 font-medium">Pièce</th>
+                <th className="text-left px-4 py-3 font-medium">État</th>
+                <th className="text-right px-4 py-3 font-medium">Prix</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {PRODUCTS.map((p) => (
+                <tr key={p.id} className="border-t border-slate-800">
+                  <td className="px-4 py-3 flex items-center gap-2 whitespace-nowrap">
+                    <span className="text-xl">{p.img}</span> {p.name}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full text-white ${p.badgeColor}`}>
+                      {p.badge}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right font-semibold text-orange-500">
+                    {fmtFCFA(p.price)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
@@ -1156,6 +1205,7 @@ function AdminRoles() {
       </p>
 
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-slate-800/50 text-slate-400 text-xs uppercase">
             <tr>
@@ -1168,14 +1218,14 @@ function AdminRoles() {
           <tbody>
             {ADMIN_USERS.map((u) => (
               <tr key={u.id} className="border-t border-slate-800">
-                <td className="px-4 py-3 font-medium flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-500 to-sky-500 flex items-center justify-center text-[10px] font-bold">
+                <td className="px-4 py-3 font-medium flex items-center gap-2 whitespace-nowrap">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-500 to-sky-500 flex items-center justify-center text-[10px] font-bold shrink-0">
                     {u.name.split(" ")[0][0]}
                   </div>
                   {u.name}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`text-xs font-semibold text-white px-2.5 py-1 rounded-full ${u.roleColor}`}>
+                  <span className={`text-xs font-semibold text-white px-2.5 py-1 rounded-full whitespace-nowrap ${u.roleColor}`}>
                     {u.role}
                   </span>
                 </td>
@@ -1184,7 +1234,7 @@ function AdminRoles() {
                   {u.editable ? (
                     <button
                       onClick={() => setModalUser(u)}
-                      className="text-xs text-sky-500 hover:underline font-medium"
+                      className="text-xs text-sky-500 hover:underline font-medium whitespace-nowrap"
                     >
                       Voir les permissions
                     </button>
@@ -1196,6 +1246,7 @@ function AdminRoles() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {modalUser && (
