@@ -30,6 +30,8 @@ import {
   AlertTriangle,
   BadgeCheck,
   Menu,
+  Loader2,
+  Mic,
 } from "lucide-react";
 
 /* =========================================================================
@@ -211,6 +213,7 @@ const LEGAL_CONTENT = {
       "Les prix affichés lors d'une intervention ou d'une commande de pièce sont fermes dès validation par l'utilisateur et sont bloqués en séquestre jusqu'à confirmation de la prestation.",
       "Toute anomalie constatée pendant l'intervention (panne additionnelle, pièce incompatible) doit faire l'objet d'un nouveau diagnostic via l'application avant toute facturation complémentaire.",
       "FlashMecano perçoit une commission de service sur chaque transaction, prélevée automatiquement lors du déblocage du séquestre.",
+      "Tarification et Commission : Les prix affichés sur l'application sont les prix finaux pour l'utilisateur. FlashMecano perçoit une commission de service de 10% sur les pièces détachées et de 15% sur la main d'œuvre de dépannage. Cette répartition est gérée exclusivement entre FlashMecano et les prestataires partenaires (mécaniciens/vendeurs). L'utilisateur final ne sera jamais soumis à des frais cachés ou à des suppléments liés à ces commissions.",
     ],
   },
   mentions: {
@@ -393,8 +396,9 @@ function MobileApp({ onEnterAdmin }) {
         {/* `transform` établit un nouveau bloc de positionnement pour que les descendants
             en `fixed` (FAB, drawer) restent confinés à la carte mobile 430px, même sur
             un écran desktop large, au lieu de se coller aux bords de la fenêtre. */}
-        {/* Barre urgence flottante persistante (sauf sur la landing où elle est le hero) */}
-        {currentView !== "landing" && currentView !== "auth" && (
+        {/* Barre urgence flottante persistante (sauf sur la landing où elle est le hero, et
+            sur le chat où elle chevaucherait le bouton micro de la barre de saisie) */}
+        {currentView !== "landing" && currentView !== "auth" && currentView !== "chat" && (
           <UrgencyFAB onClick={() => goTo("chat")} />
         )}
 
@@ -750,12 +754,17 @@ function CategoryDrawer({ open, onClose }) {
 /* ---------------------- VUE 2 : AUTH WHATSAPP/TELEGRAM -------------------- */
 
 function AuthView({ onValidated, onBack }) {
-  const [step, setStep] = useState("choice"); // choice | code
+  const [step, setStep] = useState("choice"); // choice | code | telegram-loading
   const [code, setCode] = useState(["", "", "", ""]);
   const [channel, setChannel] = useState(null);
 
   const handleChannelSelect = (ch) => {
     setChannel(ch);
+    if (ch === "telegram") {
+      setStep("telegram-loading");
+      setTimeout(onValidated, 500);
+      return;
+    }
     setStep("code");
   };
 
@@ -790,6 +799,13 @@ function AuthView({ onValidated, onBack }) {
             >
               <Send size={18} /> Continuer avec Telegram
             </button>
+          </div>
+        )}
+
+        {step === "telegram-loading" && (
+          <div className="w-full flex flex-col items-center py-6">
+            <Loader2 size={28} className="text-sky-500 animate-spin mb-4" />
+            <p className="text-sm text-slate-300">Code envoyé via Telegram…</p>
           </div>
         )}
 
@@ -901,6 +917,20 @@ function UserMessage({ children }) {
 }
 
 function ChatBiddingView({ onBack, onAccept }) {
+  const [extraMessages, setExtraMessages] = useState([]);
+  const [draft, setDraft] = useState("");
+
+  const sendText = () => {
+    const text = draft.trim();
+    if (!text) return;
+    setExtraMessages((prev) => [...prev, { type: "text", text }]);
+    setDraft("");
+  };
+
+  const sendVoice = () => {
+    setExtraMessages((prev) => [...prev, { type: "voice" }]);
+  };
+
   return (
     <div className="min-h-screen flex flex-col pb-6">
       <div className="flex items-center gap-3 px-4 py-4 border-b border-slate-900 sticky top-0 bg-slate-950 z-10">
@@ -1009,23 +1039,57 @@ function ChatBiddingView({ onBack, onAccept }) {
             </div>
           </div>
         </IaMessage>
+
+        <IaMessage>
+          <button
+            onClick={() =>
+              onAccept({
+                name: SELECTED_MECHANIC.title,
+                vendorName: SELECTED_PART.title,
+                eta: "12 min",
+                price: MISSION_TOTAL,
+                breakdown: `${SELECTED_PART.title} (${fmtFCFA(SELECTED_PART.price)}) + Main d'œuvre ${SELECTED_MECHANIC.title} (${fmtFCFA(SELECTED_MECHANIC.price)})`,
+              })
+            }
+            className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-black/50 transition-colors"
+          >
+            ✅ Payer {fmtFCFA(MISSION_TOTAL)} et verrouiller la mission
+          </button>
+        </IaMessage>
+
+        {/* Messages libres (texte ou vocal) envoyés par le client */}
+        {extraMessages.map((m, i) =>
+          m.type === "voice" ? (
+            <UserMessage key={i}>
+              <span className="flex items-center gap-2">
+                <span className="text-base">🎙️</span> Message vocal (0:03)
+              </span>
+            </UserMessage>
+          ) : (
+            <UserMessage key={i}>{m.text}</UserMessage>
+          )
+        )}
       </div>
 
       <div className="px-4">
-        <button
-          onClick={() =>
-            onAccept({
-              name: SELECTED_MECHANIC.title,
-              vendorName: SELECTED_PART.title,
-              eta: "12 min",
-              price: MISSION_TOTAL,
-              breakdown: `${SELECTED_PART.title} (${fmtFCFA(SELECTED_PART.price)}) + Main d'œuvre ${SELECTED_MECHANIC.title} (${fmtFCFA(SELECTED_MECHANIC.price)})`,
-            })
-          }
-          className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-black/50 transition-colors"
-        >
-          ✅ Payer {fmtFCFA(MISSION_TOTAL)} et verrouiller la mission
-        </button>
+        <div className="flex items-center gap-2">
+          <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") sendText();
+            }}
+            placeholder="Écrivez ou parlez..."
+            className="flex-1 bg-slate-800 border border-slate-700 rounded-full px-4 py-2.5 text-xs outline-none focus:border-orange-500 placeholder:text-slate-500"
+          />
+          <button
+            onClick={sendVoice}
+            aria-label="Message vocal"
+            className="w-10 h-10 rounded-full bg-orange-500 hover:bg-orange-600 flex items-center justify-center shrink-0 transition-colors"
+          >
+            <Mic size={17} className="text-white" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1185,6 +1249,21 @@ function TrackingView({ mechanic, onBack }) {
         <span className="absolute bottom-3 left-3 text-[11px] bg-slate-950/80 px-2 py-1 rounded-full text-slate-300">
           Position en direct
         </span>
+      </div>
+
+      <div className="space-y-2 mb-4">
+        <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-3 flex items-center justify-between gap-2">
+          <p className="text-xs font-medium text-orange-300">
+            🧑‍🔧 {mechanic?.name} - En route
+          </p>
+          <span className="text-xs font-bold text-orange-400 shrink-0">2 min</span>
+        </div>
+        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 flex items-center justify-between gap-2">
+          <p className="text-xs font-medium text-emerald-300">
+            📦 {mechanic?.vendorName} - Pièce en livraison vers votre position
+          </p>
+          <span className="text-xs font-bold text-emerald-400 shrink-0">4 min</span>
+        </div>
       </div>
 
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 mb-4">
