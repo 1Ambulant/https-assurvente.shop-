@@ -79,6 +79,11 @@ const CATEGORY_TREE = [
         children: ["Amortisseurs", "Rotules", "Silent-blocs", "Ressorts"],
       },
       {
+        id: "auto-pneumatiques",
+        label: "Pneumatiques",
+        children: ["Pneus été", "Pneus hiver", "Pneus 4x4"],
+      },
+      {
         id: "auto-carrosserie",
         label: "Carrosserie & Accessoires",
         children: ["Rétroviseurs", "Phares", "Pare-chocs", "Autoradios/GPS", "Jantes"],
@@ -603,10 +608,10 @@ function Footer() {
       </div>
       <p className="text-xs text-slate-500">© 2026 FlashMecano</p>
       <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-        <MapPin size={12} /> Dakar, Sénégal (Modifiable via Admin)
+        <MapPin size={12} /> Dakar, Sénégal
       </p>
       <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-        <Phone size={12} /> +221 77 861 06 60 (Modifiable via Admin)
+        <Phone size={12} /> +221 77 861 06 60
       </p>
       <div className="flex gap-4 mt-3 text-[11px] text-sky-500">
         <button onClick={() => setLegalDoc("cgv")} className="hover:underline">
