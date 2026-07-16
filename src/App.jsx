@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Zap,
   ShoppingCart,
@@ -851,22 +851,25 @@ function AuthView({ onValidated, onBack }) {
 
 /* --------------- VUE 3 : CHAT LINGUA — COMPARATEUR D'URGENCE -------------- */
 
-const PART_OFFERS = [
-  { id: "p1", title: "Ibrahima Pièces", meta: "À 1.2 km - Keur Massar", price: 40000 },
-  { id: "p2", title: "Auto-Services", meta: "À 2.5 km - Keur Massar", price: 42000 },
-  { id: "p3", title: "Casse Diop", meta: "À 3.1 km - Keur Massar", price: 35000, tag: "OCCASION" },
-];
+/* Endpoint du cerveau MyLingua. Le frontend n'a plus aucune donnée en dur :
+   tout le contenu du chat (diagnostic, offres, montant à payer) provient
+   de cette API. */
+const LINGUA_API_URL = "/api/lingua/chat";
 
-const MECHANIC_OFFERS_SCRIPT = [
-  { id: "m1", title: "Mamadou Dépannage", meta: "À 2 km - Keur Massar", price: 15000, rating: 4.8 },
-  { id: "m2", title: "Garage Sérère Auto", meta: "À 3 km - Keur Massar", price: 20000, rating: 4.9 },
-  { id: "m3", title: "Omar Mécanique", meta: "À 4 km - Keur Massar", price: 12000, tag: "NOUVEAU" },
-];
-
-const SELECTED_PART = PART_OFFERS[2]; // Casse Diop, 35 000 FCFA
-const SELECTED_MECHANIC = MECHANIC_OFFERS_SCRIPT[2]; // Omar Mécanique, 12 000 FCFA
-const MISSION_TOTAL = SELECTED_PART.price + SELECTED_MECHANIC.price;
-const OEM_REFERENCE = "5Q0915105C";
+async function callLinguaAPI({ conversationId, message }) {
+  const res = await fetch(LINGUA_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      conversation_id: conversationId,
+      message,
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(`Lingua API error: ${res.status}`);
+  }
+  return res.json();
+}
 
 function OfferMiniCard({ title, meta, price, tag, rating }) {
   return (
@@ -921,19 +924,149 @@ function UserMessage({ children }) {
   );
 }
 
+/* Traduit un message structuré renvoyé par MyLingua en composants existants.
+   Un type inconnu (futur) est ignoré silencieusement plutôt que de casser le chat. */
+function LinguaMessage({ message, onLockMission }) {
+  switch (message.type) {
+    case "text":
+      return <IaMessage label={message.text} />;
+
+    case "diagnostic":
+      return (
+        <IaMessage>
+          <div className="bg-slate-800 border border-slate-700 rounded-xl p-3">
+            <p className="text-[10px] font-bold text-orange-500 uppercase tracking-wide mb-1">
+              {message.title}
+            </p>
+            <p className="text-xs text-slate-300 leading-relaxed">{message.text}</p>
+            {typeof message.confidence === "number" && (
+              <p className="text-[11px] text-emerald-500 font-semibold mt-2">
+                Diagnostic fiable à {message.confidence}%
+              </p>
+            )}
+          </div>
+        </IaMessage>
+      );
+
+    case "offer_list":
+      return (
+        <IaMessage label={message.label}>
+          <div className="space-y-2">
+            {message.offers.map((o) => (
+              <OfferMiniCard
+                key={o.id}
+                title={o.title}
+                meta={`À ${o.distance_km} km - ${o.zone}`}
+                price={o.price}
+                tag={o.tag}
+                rating={o.rating}
+              />
+            ))}
+          </div>
+        </IaMessage>
+      );
+
+    case "payment_cta":
+      return (
+        <IaMessage label={message.text}>
+          <button
+            onClick={() => onLockMission(message)}
+            className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-black/50 transition-colors"
+          >
+            ✅ Payer {fmtFCFA(message.total_amount)} et verrouiller la mission
+          </button>
+        </IaMessage>
+      );
+
+    case "contact_unlocked":
+      // Débloqué uniquement après confirmation du webhook de paiement — étape suivante.
+      return null;
+
+    default:
+      return null;
+  }
+}
+
 function ChatBiddingView({ onBack, onAccept }) {
-  const [extraMessages, setExtraMessages] = useState([]);
+  const [conversationId, setConversationId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [offersById, setOffersById] = useState({});
   const [draft, setDraft] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const initialized = useRef(false);
+
+  const registerOffers = (linguaMessages) => {
+    setOffersById((prev) => {
+      const next = { ...prev };
+      linguaMessages.forEach((m) => {
+        if (m.type === "offer_list") {
+          m.offers.forEach((o) => {
+            next[o.id] = { ...o, category: m.category };
+          });
+        }
+      });
+      return next;
+    });
+  };
+
+  const sendToLingua = async (userMessage) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await callLinguaAPI({ conversationId, message: userMessage });
+      const linguaMessages = data.messages || [];
+      setConversationId(data.conversation_id || conversationId);
+      registerOffers(linguaMessages);
+      setMessages((prev) => [
+        ...prev,
+        ...linguaMessages.map((m) => ({ ...m, from: "lingua" })),
+      ]);
+    } catch (e) {
+      setError("Connexion au cerveau MyLingua impossible. Réessayez.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+    sendToLingua({ type: "init" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const sendText = () => {
     const text = draft.trim();
     if (!text) return;
-    setExtraMessages((prev) => [...prev, { type: "text", text }]);
+    setMessages((prev) => [...prev, { id: `u_${Date.now()}`, from: "user", kind: "text", text }]);
     setDraft("");
+    sendToLingua({ type: "text", content: text });
   };
 
   const sendVoice = () => {
-    setExtraMessages((prev) => [...prev, { type: "voice" }]);
+    setMessages((prev) => [...prev, { id: `u_${Date.now()}`, from: "user", kind: "voice" }]);
+    sendToLingua({ type: "voice", content: "voice_note" });
+  };
+
+  const handleLockMission = (message) => {
+    const breakdown = message.breakdown || [];
+    const breakdownStr = breakdown
+      .map((b) => `${b.label} (${fmtFCFA(b.amount)})`)
+      .join(" + ");
+
+    const linkedOffers = breakdown.map((b) => offersById[b.ref_offer_id]);
+    const mechanicOffer = linkedOffers.find((o) => o?.category === "mechanics");
+    const vendorOffer = linkedOffers.find((o) => o?.category === "parts");
+
+    onAccept({
+      missionId: message.mission_id,
+      name: mechanicOffer?.title || "Mécanicien",
+      vendorName: vendorOffer?.title || "Vendeur",
+      eta: mechanicOffer?.eta || "À confirmer",
+      price: message.total_amount,
+      breakdown: breakdownStr,
+    });
   };
 
   return (
@@ -951,128 +1084,34 @@ function ChatBiddingView({ onBack, onAccept }) {
       </div>
 
       <div className="flex-1 px-4 py-4 space-y-4">
-        {/* 1. Diagnostic */}
-        <IaMessage label="Décrivez votre panne." />
-        <UserMessage>
-          Au péage de Keur Massar, ma Polo fait un clic-clac sec et démarre plus.
-        </UserMessage>
-        <IaMessage>
-          <div className="bg-slate-800 border border-slate-700 rounded-xl p-3">
-            <p className="text-[10px] font-bold text-orange-500 uppercase tracking-wide mb-1">
-              🧠 Analyse Multi-Symptômes
-            </p>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Clic-clac sec + absence de rotation = décharge profonde ou coupure cellule
-              batterie. Ce n'est pas un problème d'alternateur.
-            </p>
-            <p className="text-[11px] text-emerald-500 font-semibold mt-2">
-              Diagnostic fiable à 98%
-            </p>
-          </div>
-        </IaMessage>
-
-        {/* 2. Scraping Auto-Doc (expertise cachée) */}
-        <IaMessage label="🧠 Analyse : Clic-clac = Batterie. Je scanne les catalogues internationaux pour trouver la référence exacte…" />
-        <IaMessage>
-          <div className="bg-slate-800 border border-slate-700 rounded-xl p-3">
-            <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wide mb-1">
-              ✅ Référence OEM trouvée (Scraping)
-            </p>
-            <p className="text-sm font-mono font-bold text-white">{OEM_REFERENCE}</p>
-            <p className="text-[11px] text-slate-400 mt-1">
-              C'est le modèle exact pour votre Polo 6 TSI.
-            </p>
-          </div>
-        </IaMessage>
-        <IaMessage label="J'ai envoyé cette référence ET la photo de la pièce aux vendeurs de la zone par WhatsApp. Ils ne peuvent pas se tromper de modèle.">
-          <div className="flex gap-2">
-            <span className="text-[10px] font-mono bg-slate-800 border border-slate-700 rounded-full px-2.5 py-1 text-slate-300">
-              📎 {OEM_REFERENCE}
-            </span>
-            <span className="text-[10px] bg-slate-800 border border-slate-700 rounded-full px-2.5 py-1 text-slate-300">
-              📷 Photo pièce envoyée
-            </span>
-          </div>
-        </IaMessage>
-
-        {/* 3. Flash-Bidding Pièces (masking total) */}
-        <IaMessage label="📍 Recherche des pièces dans un rayon de 5 km…" />
-        <IaMessage label="✅ 3 vendeurs partenaires ont la batterie 70Ah. J'en scanne aussi 2 vendeurs non-inscrits à Keur Massar pour vous faire le meilleur prix.">
-          <div className="space-y-2">
-            {PART_OFFERS.map((o) => (
-              <OfferMiniCard key={o.id} {...o} />
-            ))}
-          </div>
-        </IaMessage>
-        <IaMessage>
-          <div className="bg-slate-800 border border-dashed border-sky-500/60 rounded-xl p-3 flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold">Vendeur non inscrit</p>
-              <p className="text-[11px] text-sky-400 mt-0.5">
-                Rejoindrait la plateforme pour cette vente
-              </p>
-            </div>
-            <p className="text-lg font-bold text-sky-400 shrink-0">38 000 FCFA</p>
-          </div>
-        </IaMessage>
-
-        {/* 4. Flash-Bidding Main d'œuvre (masking total) */}
-        <IaMessage label="🔧 Mécaniciens disponibles pour le remplacement immédiat :">
-          <div className="space-y-2">
-            {MECHANIC_OFFERS_SCRIPT.map((o) => (
-              <OfferMiniCard key={o.id} {...o} />
-            ))}
-          </div>
-        </IaMessage>
-        <IaMessage label="Vous pouvez aussi consulter des mécaniciens plus éloignés, mais le délai d'attente augmentera. 🔒 Les coordonnées restent masquées jusqu'au paiement." />
-
-        {/* 5. Validation & paiement ferme */}
-        <IaMessage label="Faites votre choix. Une fois sélectionnés, les prix sont figés. Zéro négociation sur site, zéro surprise. Si un autre problème est trouvé, le mécano doit redemander un diagnostic via l'application." />
-        <IaMessage label="Vous avez sélectionné :">
-          <div className="bg-slate-800 border border-emerald-500/40 rounded-xl p-3 space-y-1.5">
-            <div className="flex items-center justify-between text-xs text-slate-300">
-              <span>{SELECTED_PART.title} ({SELECTED_PART.tag?.toLowerCase()})</span>
-              <span className="font-semibold">{fmtFCFA(SELECTED_PART.price)}</span>
-            </div>
-            <div className="flex items-center justify-between text-xs text-slate-300">
-              <span>Main d'œuvre — {SELECTED_MECHANIC.title}</span>
-              <span className="font-semibold">{fmtFCFA(SELECTED_MECHANIC.price)}</span>
-            </div>
-            <div className="flex items-center justify-between pt-1.5 border-t border-slate-700">
-              <span className="text-xs font-semibold text-slate-400">Total</span>
-              <span className="text-xl font-bold text-emerald-500">{fmtFCFA(MISSION_TOTAL)}</span>
-            </div>
-          </div>
-        </IaMessage>
-
-        <IaMessage>
-          <button
-            onClick={() =>
-              onAccept({
-                name: SELECTED_MECHANIC.title,
-                vendorName: SELECTED_PART.title,
-                eta: "12 min",
-                price: MISSION_TOTAL,
-                breakdown: `${SELECTED_PART.title} (${fmtFCFA(SELECTED_PART.price)}) + Main d'œuvre ${SELECTED_MECHANIC.title} (${fmtFCFA(SELECTED_MECHANIC.price)})`,
-              })
-            }
-            className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-black/50 transition-colors"
-          >
-            ✅ Payer {fmtFCFA(MISSION_TOTAL)} et verrouiller la mission
-          </button>
-        </IaMessage>
-
-        {/* Messages libres (texte ou vocal) envoyés par le client */}
-        {extraMessages.map((m, i) =>
-          m.type === "voice" ? (
-            <UserMessage key={i}>
-              <span className="flex items-center gap-2">
-                <span className="text-base">🎙️</span> Message vocal (0:03)
-              </span>
+        {messages.map((m) =>
+          m.from === "user" ? (
+            <UserMessage key={m.id}>
+              {m.kind === "voice" ? (
+                <span className="flex items-center gap-2">
+                  <span className="text-base">🎙️</span> Message vocal (0:03)
+                </span>
+              ) : (
+                m.text
+              )}
             </UserMessage>
           ) : (
-            <UserMessage key={i}>{m.text}</UserMessage>
+            <LinguaMessage key={m.id} message={m} onLockMission={handleLockMission} />
           )
+        )}
+
+        {loading && (
+          <IaMessage>
+            <div className="flex items-center gap-2 text-slate-400 text-xs">
+              <Loader2 size={14} className="animate-spin" /> MyLingua analyse…
+            </div>
+          </IaMessage>
+        )}
+
+        {error && (
+          <IaMessage>
+            <p className="text-xs text-orange-400">{error}</p>
+          </IaMessage>
         )}
       </div>
 
