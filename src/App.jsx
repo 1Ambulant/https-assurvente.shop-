@@ -33,6 +33,7 @@ import {
   Loader2,
   Mic,
 } from "lucide-react";
+import { fetchMockLinguaResponse } from "./mockLinguaAPI";
 
 /* =========================================================================
    FLASHMECANO — Marketplace de dépannage & pièces détachées (Sénégal)
@@ -856,7 +857,16 @@ function AuthView({ onValidated, onBack }) {
    de cette API. */
 const LINGUA_API_URL = "/api/lingua/chat";
 
+/* Bascule démo : tant que le vrai backend MyLingua n'est pas prêt, on sert
+   les réponses depuis mockLinguaAPI.js (même contrat JSON) pour pouvoir
+   tester le parcours complet (chat → paiement) sans dépendance externe. */
+const USE_MOCK = true;
+
 async function callLinguaAPI({ conversationId, message }) {
+  if (USE_MOCK) {
+    return fetchMockLinguaResponse({ conversationId, message });
+  }
+
   const res = await fetch(LINGUA_API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
