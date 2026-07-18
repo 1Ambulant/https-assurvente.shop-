@@ -760,21 +760,14 @@ function CategoryDrawer({ open, onClose }) {
 /* ---------------------- VUE 2 : AUTH WHATSAPP/TELEGRAM -------------------- */
 
 function AuthView({ onValidated, onBack }) {
-  const [step, setStep] = useState("choice"); // choice | code | telegram-loading
-  const [code, setCode] = useState(["", "", "", ""]);
+  const [step, setStep] = useState("choice"); // choice | connecting
   const [channel, setChannel] = useState(null);
 
   const handleChannelSelect = (ch) => {
     setChannel(ch);
-    if (ch === "telegram") {
-      setStep("telegram-loading");
-      setTimeout(onValidated, 500);
-      return;
-    }
-    setStep("code");
+    setStep("connecting");
+    setTimeout(onValidated, 500);
   };
-
-  const codeComplete = code.every((c) => c.length === 1);
 
   return (
     <div className="px-4 pt-6 pb-10 min-h-screen flex flex-col">
@@ -808,41 +801,10 @@ function AuthView({ onValidated, onBack }) {
           </div>
         )}
 
-        {step === "telegram-loading" && (
+        {step === "connecting" && (
           <div className="w-full flex flex-col items-center py-6">
             <Loader2 size={28} className="text-sky-500 animate-spin mb-4" />
-            <p className="text-sm text-slate-300">Code envoyé via Telegram…</p>
-          </div>
-        )}
-
-        {step === "code" && (
-          <div className="w-full">
-            <p className="text-xs text-slate-500 mb-4">
-              Code envoyé via {channel === "whatsapp" ? "WhatsApp" : "Telegram"}
-            </p>
-            <div className="flex justify-center gap-3 mb-6">
-              {code.map((c, i) => (
-                <input
-                  key={i}
-                  value={c}
-                  onChange={(e) => {
-                    const v = e.target.value.slice(-1);
-                    const next = [...code];
-                    next[i] = v;
-                    setCode(next);
-                  }}
-                  maxLength={1}
-                  className="w-12 h-14 text-center text-lg font-bold bg-slate-800 border border-slate-700 rounded-lg outline-none focus:border-orange-500"
-                />
-              ))}
-            </div>
-            <button
-              disabled={!codeComplete}
-              onClick={onValidated}
-              className="w-full bg-orange-500 disabled:bg-slate-800 disabled:text-slate-600 hover:bg-orange-600 text-white font-bold py-3.5 rounded-xl transition-colors"
-            >
-              Valider et lancer la recherche
-            </button>
+            <p className="text-sm text-slate-300">Connexion…</p>
           </div>
         )}
       </div>
@@ -860,7 +822,7 @@ const LINGUA_API_URL = "/api/lingua/chat";
 /* Bascule démo : tant que le vrai backend MyLingua n'est pas prêt, on sert
    les réponses depuis mockLinguaAPI.js (même contrat JSON) pour pouvoir
    tester le parcours complet (chat → paiement) sans dépendance externe. */
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 async function callLinguaAPI({ conversationId, message }) {
   if (USE_MOCK) {
