@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Zap,
-  ShoppingCart,
   ShieldCheck,
   Search,
   X,
@@ -140,45 +139,6 @@ const CATEGORY_TREE = [
   },
 ];
 
-const PRODUCTS = [
-  {
-    id: 1,
-    name: "Kit Plaquettes Avant (Hilux)",
-    price: 18000,
-    badge: "NEUF",
-    badgeColor: "bg-emerald-500",
-    rating: 4.8,
-    image: "https://images.unsplash.com/photo-1600712242805-5f78671b24da?w=400&h=300&fit=crop",
-  },
-  {
-    id: 2,
-    name: "Batterie 70Ah (Polo 6)",
-    price: 25000,
-    badge: "OCCASION",
-    badgeColor: "bg-yellow-500",
-    rating: 4.3,
-    image: "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400&h=300&fit=crop",
-  },
-  {
-    id: 3,
-    name: "Moteur Essence (Mercedes ML)",
-    price: 1500000,
-    badge: "RECONDITIONNÉ",
-    badgeColor: "bg-sky-500",
-    rating: 4.6,
-    image: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=400&h=300&fit=crop",
-  },
-  {
-    id: 4,
-    name: "Kit Chaîne Moto (Yamaha DT)",
-    price: 15000,
-    badge: "NEUF",
-    badgeColor: "bg-emerald-500",
-    rating: 4.9,
-    image: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&h=300&fit=crop",
-  },
-];
-
 const ADMIN_USERS = [
   {
     id: 1,
@@ -280,11 +240,6 @@ export default function FlashMecanoApp() {
   );
   const [adminUser, setAdminUser] = useState(null);
 
-  const enterAdmin = () => {
-    if (typeof window !== "undefined") window.location.hash = "admin";
-    setAppMode("admin");
-  };
-
   const exitAdmin = () => {
     if (typeof window !== "undefined") window.location.hash = "";
     setAdminUser(null);
@@ -299,7 +254,7 @@ export default function FlashMecanoApp() {
     );
   }
 
-  return <MobileApp onEnterAdmin={enterAdmin} />;
+  return <MobileApp />;
 }
 
 /* -------------------------------------------------------------------------
@@ -385,10 +340,9 @@ function AdminLoginGate({ onSuccess, onCancel }) {
    BLOC MOBILE — Landing, Urgence, Chat, Séquestre, Suivi GPS
    ========================================================================= */
 
-function MobileApp({ onEnterAdmin }) {
+function MobileApp() {
   const [currentView, setCurrentView] = useState("landing");
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [cartCount] = useState(2);
   const [selectedMechanic, setSelectedMechanic] = useState(null);
 
   const goTo = (view) => {
@@ -411,10 +365,8 @@ function MobileApp({ onEnterAdmin }) {
         <div className="transition-opacity duration-300 ease-in-out">
           {currentView === "landing" && (
             <LandingView
-              cartCount={cartCount}
               onOpenDrawer={() => setDrawerOpen(true)}
               onUrgence={() => goTo("auth")}
-              onEnterAdmin={onEnterAdmin}
               onGoChat={() => goTo("chat")}
             />
           )}
@@ -465,7 +417,7 @@ function UrgencyFAB({ onClick }) {
 
 /* ---------------------------- VUE 1 : LANDING --------------------------- */
 
-function LandingView({ cartCount, onOpenDrawer, onUrgence, onEnterAdmin, onGoChat }) {
+function LandingView({ onOpenDrawer, onUrgence, onGoChat }) {
   const [search, setSearch] = useState("");
 
   return (
@@ -475,22 +427,6 @@ function LandingView({ cartCount, onOpenDrawer, onUrgence, onEnterAdmin, onGoCha
         <div className="flex items-center gap-1.5 text-lg font-bold">
           <span>FlashMecano</span>
           <Zap className="text-orange-500 fill-orange-500" size={20} />
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onEnterAdmin}
-            className="text-xs font-medium bg-slate-900 border border-slate-800 text-slate-300 px-3 py-1.5 rounded-full hover:bg-slate-800 transition-colors"
-          >
-            Admin
-          </button>
-          <button className="relative">
-            <ShoppingCart size={22} className="text-slate-300" />
-            {cartCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                {cartCount}
-              </span>
-            )}
-          </button>
         </div>
       </div>
 
@@ -542,10 +478,14 @@ function LandingView({ cartCount, onOpenDrawer, onUrgence, onEnterAdmin, onGoCha
         <h2 className="text-sm font-semibold text-slate-300 mb-3">
           Pièces populaires
         </h2>
-        <div className="grid grid-cols-2 gap-3">
-          {PRODUCTS.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
+        <div className="bg-slate-900/50 border border-dashed border-slate-800 rounded-xl py-10 px-4 flex flex-col items-center text-center">
+          <Package size={28} className="text-slate-600 mb-3" />
+          <p className="text-sm font-medium text-slate-400">
+            La marketplace est en cours de chargement...
+          </p>
+          <p className="text-xs text-slate-500 mt-1">
+            Bientôt de vraies pièces vérifiées ici.
+          </p>
         </div>
       </div>
 
@@ -560,40 +500,6 @@ function LandingView({ cartCount, onOpenDrawer, onUrgence, onEnterAdmin, onGoCha
       </div>
 
       <Footer />
-    </div>
-  );
-}
-
-function ProductCard({ product }) {
-  return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg shadow-black/50 hover:border-slate-700 transition-colors">
-      <div className="relative h-40">
-        <ImgWithFallback
-          src={product.image}
-          alt={product.name}
-          className="h-40 w-full object-cover rounded-t-xl"
-          fallbackIcon={Package}
-        />
-        <span
-          className={`absolute top-2 left-2 ${product.badgeColor} text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg shadow-black/50`}
-        >
-          {product.badge}
-        </span>
-      </div>
-      <div className="p-3">
-        <p className="text-xs font-medium leading-snug line-clamp-2 min-h-[2rem]">
-          {product.name}
-        </p>
-        <div className="flex items-center gap-1 mt-1 text-[11px] text-slate-400">
-          <Star size={11} className="fill-yellow-500 text-yellow-500" />
-          {product.rating}
-        </div>
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-sm font-bold text-orange-500">
-            {fmtFCFA(product.price)}
-          </span>
-        </div>
-      </div>
     </div>
   );
 }
@@ -1547,43 +1453,11 @@ function AdminPieces() {
     <div>
       <h1 className="text-xl font-bold mb-1">Pièces</h1>
       <p className="text-sm text-slate-400 mb-6">Catalogue des pièces détachées en vente</p>
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-800/50 text-slate-400 text-xs uppercase">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium">Pièce</th>
-                <th className="text-left px-4 py-3 font-medium">État</th>
-                <th className="text-right px-4 py-3 font-medium">Prix</th>
-              </tr>
-            </thead>
-            <tbody>
-              {PRODUCTS.map((p) => (
-                <tr key={p.id} className="border-t border-slate-800">
-                  <td className="px-4 py-3 flex items-center gap-2 whitespace-nowrap">
-                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-800 shrink-0">
-                      <ImgWithFallback
-                        src={p.image}
-                        alt={p.name}
-                        className="w-10 h-10 object-cover"
-                        fallbackIcon={Package}
-                      />
-                    </div>
-                    {p.name}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full text-white ${p.badgeColor}`}>
-                      {p.badge}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold text-orange-500">
-                    {fmtFCFA(p.price)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div className="bg-slate-900/50 border border-dashed border-slate-800 rounded-xl py-10 px-4 flex flex-col items-center text-center">
+        <Package size={28} className="text-slate-600 mb-3" />
+        <p className="text-sm font-medium text-slate-400">
+          Aucune pièce enregistrée pour l'instant.
+        </p>
       </div>
     </div>
   );
