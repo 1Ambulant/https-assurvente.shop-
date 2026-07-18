@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Zap,
+  ShoppingCart,
   ShieldCheck,
   Search,
   X,
@@ -343,6 +344,7 @@ function AdminLoginGate({ onSuccess, onCancel }) {
 function MobileApp() {
   const [currentView, setCurrentView] = useState("landing");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [cartCount] = useState(0);
   const [selectedMechanic, setSelectedMechanic] = useState(null);
 
   const goTo = (view) => {
@@ -365,6 +367,7 @@ function MobileApp() {
         <div className="transition-opacity duration-300 ease-in-out">
           {currentView === "landing" && (
             <LandingView
+              cartCount={cartCount}
               onOpenDrawer={() => setDrawerOpen(true)}
               onUrgence={() => goTo("auth")}
               onGoChat={() => goTo("chat")}
@@ -417,7 +420,7 @@ function UrgencyFAB({ onClick }) {
 
 /* ---------------------------- VUE 1 : LANDING --------------------------- */
 
-function LandingView({ onOpenDrawer, onUrgence, onGoChat }) {
+function LandingView({ cartCount, onOpenDrawer, onUrgence, onGoChat }) {
   const [search, setSearch] = useState("");
 
   return (
@@ -428,6 +431,14 @@ function LandingView({ onOpenDrawer, onUrgence, onGoChat }) {
           <span>FlashMecano</span>
           <Zap className="text-orange-500 fill-orange-500" size={20} />
         </div>
+        <button className="relative">
+          <ShoppingCart size={22} className="text-slate-300" />
+          {cartCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+              {cartCount}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Hero */}
