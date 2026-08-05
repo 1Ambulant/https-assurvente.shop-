@@ -65,7 +65,7 @@ export default function Home() {
           <h2 className="text-2xl font-bold mb-2 leading-tight">Votre mécano<br/>en 30 minutes</h2>
           <p className="text-blue-100 text-sm mb-4">Pièces d'occasion + Main d'œuvre à domicile</p>
           <div className="flex flex-wrap gap-2">
-            {["? Rapide", "? Garanti", "?? Transparent"].map((tag) => (
+            {["⚡ Rapide", "✅ Garanti", "💰 Transparent"].map((tag) => (
               <span key={tag} className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium">{tag}</span>
             ))}
           </div>
@@ -96,7 +96,7 @@ export default function Home() {
           <h3 className="font-bold text-gray-800 flex items-center gap-2 text-sm">
             <ShoppingCart size={16} className="text-blue-600" />Pièces populaires
           </h3>
-          <span className="text-xs text-blue-600 font-semibold cursor-pointer">Voir tout ?</span>
+          <span className="text-xs text-blue-600 font-semibold cursor-pointer">Voir tout →</span>
         </div>
         <div className="grid grid-cols-2 gap-3">
           {POPULAR_PARTS.map((p, i) => (
@@ -189,7 +189,7 @@ export default function Home() {
                 </button>
               ))}
             </div>
-            <button onClick={() => setStep("form")} className="w-full mt-3 text-gray-500 text-sm py-2">? Retour</button>
+            <button onClick={() => setStep("form")} className="w-full mt-3 text-gray-500 text-sm py-2">← Retour</button>
           </>
         )}
         {step === "success" && (

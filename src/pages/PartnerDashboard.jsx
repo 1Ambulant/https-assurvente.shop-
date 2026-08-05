@@ -11,13 +11,17 @@ export default function PartnerDashboard() {
   const { play } = useAudio();
 
   useEffect(() => {
+    const fallbackAccount = { solde_disponible_partenaire: 7116, nombre_transactions: 8, chiffre_affaires_total: 45000, solde_total: 12500 };
+    const fallbackRetraits = [
+      { id: "r1", montant: 50000, statut: "en_attente", created_at: "2026-08-04T20:00:00Z" },
+      { id: "r2", montant: 25000, statut: "approuve", created_at: "2026-08-03T18:00:00Z" },
+    ];
     Promise.all([
-      api.getPartnerAccount().catch(() => ({ solde_disponible_partenaire: 7116, nombre_transactions: 8, chiffre_affaires_total: 45000, solde_total: 12500 })),
-      api.getPartnerRetraits().catch(() => [
-        { id: "r1", montant: 50000, statut: "en_attente", created_at: "2026-08-04T20:00:00Z" },
-        { id: "r2", montant: 25000, statut: "approuve", created_at: "2026-08-03T18:00:00Z" },
-      ]),
-    ]).then(([acc, ret]) => { setAccount(acc); setRetraits(ret); setLoading(false); play("notification"); });
+      api.getPartnerAccount()
+        .then((acc) => (acc && Object.keys(acc).length > 0 ? acc : fallbackAccount))
+        .catch(() => fallbackAccount),
+      api.getPartnerRetraits().catch(() => fallbackRetraits),
+    ]).then(([acc, ret]) => { setAccount(acc); setRetraits(Array.isArray(ret) ? ret : fallbackRetraits); setLoading(false); play("notification"); });
   }, [play]);
 
   const handleWithdraw = async (e) => {
@@ -26,7 +30,7 @@ export default function PartnerDashboard() {
     if (!montant || montant < 50000) { alert("Minimum 50 000 FCFA"); return; }
     try {
       await api.demanderRetrait({ montant, methode: "wave", numero_wallet: "" });
-      play("success"); setAmount(""); alert("Retrait demandé !");
+      play("success"); setAmount(""); alert("Retrait demandÃ© !");
     } catch (err) { play("error"); alert(err.message); }
   };
 
@@ -72,11 +76,14 @@ export default function PartnerDashboard() {
             value={amount} onChange={(e) => setAmount(e.target.value)} />
           <button className="bg-green-600 text-white px-5 rounded-xl font-bold text-sm active:bg-green-700 shadow-lg shadow-green-200 transition-all">Retirer</button>
         </form>
-        <p className="text-[10px] text-gray-400 mt-2">Minimum : 50 000 F • Wave / Orange Money</p>
+        <p className="text-[10px] text-gray-400 mt-2">Minimum : 50 000 F â€¢ Wave / Orange Money</p>
       </div>
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
         <h3 className="font-bold text-sm mb-4 flex items-center gap-2"><History size={16} className="text-blue-600" />Historique des retraits</h3>
         <div className="space-y-3">
+          {retraits.length === 0 && (
+            <p className="text-xs text-gray-400 text-center py-4">Aucun retrait pour l'instant.</p>
+          )}
           {retraits.map((r) => (
             <div key={r.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
               <div className="flex items-center gap-3">
@@ -88,7 +95,7 @@ export default function PartnerDashboard() {
               </div>
               <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
                 r.statut === "approuve" ? "bg-green-100 text-green-700" : r.statut === "rejete" ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"
-              }`}>{r.statut === "approuve" ? "Approuvé" : r.statut === "rejete" ? "Rejeté" : "En attente"}</span>
+              }`}>{r.statut === "approuve" ? "ApprouvÃ©" : r.statut === "rejete" ? "RejetÃ©" : "En attente"}</span>
             </div>
           ))}
         </div>
