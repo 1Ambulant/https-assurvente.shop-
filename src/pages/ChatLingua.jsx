@@ -197,11 +197,7 @@ export default function ChatLingua() {
           setStep(STEPS.CHOSEN);
 
           addBotMessage(
-            `Commande creee avec succes !\n\n` +
-            `Reference : ${data3.reference}\n` +
-            `Total : ${data3.total_client?.toLocaleString()} FCFA\n\n` +
-            `Paiement securise par sequestre FlashMecano.\n` +
-            `Les contacts vendeur + mecano seront debloques apres paiement.`
+            `Commande creee ! Reference : ${data3.reference} — Total : ${data3.total_client?.toLocaleString()} FCFA`
           );
           break;
         }
