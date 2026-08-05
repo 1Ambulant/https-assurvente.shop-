@@ -9,15 +9,11 @@ export default function AdminDashboard() {
   const { play } = useAudio();
 
   useEffect(() => {
-    const fallback = {
+    api.getAdminCompta().catch(() => ({
       total_commissions: 25784, total_tva: 4641, total_frais: 7993,
       solde_net_total: 17791, gain_admin_total: 10675, gain_partenaire_total: 7116,
       nb_commandes: 12, nb_en_attente: 3
-    };
-    api.getAdminCompta()
-      .then((compta) => (compta && Object.keys(compta).length > 0 ? compta : fallback))
-      .catch(() => fallback)
-      .then((data) => { setStats(data); setLoading(false); play("notification"); });
+    })).then((compta) => { setStats(compta); setLoading(false); play("notification"); });
   }, [play]);
 
   if (loading) return <div className="p-8 text-center text-gray-400 animate-pulse">Chargement...</div>;
@@ -45,7 +41,7 @@ export default function AdminDashboard() {
         ))}
       </div>
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-        <h3 className="font-bold text-sm mb-4 flex items-center gap-2"><BarChart3 size={16} className="text-blue-600" />RÃ©partition des gains</h3>
+        <h3 className="font-bold text-sm mb-4 flex items-center gap-2"><BarChart3 size={16} className="text-blue-600" />Répartition des gains</h3>
         <div className="space-y-4">
           <div>
             <div className="flex justify-between text-sm mb-1.5">
@@ -64,18 +60,18 @@ export default function AdminDashboard() {
         </div>
       </div>
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-        <h3 className="font-bold text-sm mb-4 flex items-center gap-2"><Receipt size={16} className="text-blue-600" />DerniÃ¨res opÃ©rations</h3>
+        <h3 className="font-bold text-sm mb-4 flex items-center gap-2"><Receipt size={16} className="text-blue-600" />Dernières opérations</h3>
         <div className="space-y-3">
           {[
-            { ref: "FM-1000", date: "05/08/2026", montant: 17791, statut: "TerminÃ©" },
-            { ref: "FM-0999", date: "04/08/2026", montant: 15200, statut: "TerminÃ©" },
+            { ref: "FM-1000", date: "05/08/2026", montant: 17791, statut: "Terminé" },
+            { ref: "FM-0999", date: "04/08/2026", montant: 15200, statut: "Terminé" },
             { ref: "FM-0998", date: "04/08/2026", montant: 8900, statut: "En cours" },
           ].map((op) => (
             <div key={op.ref} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
               <div><p className="text-sm font-bold text-gray-800">{op.ref}</p><p className="text-[10px] text-gray-400">{op.date}</p></div>
               <div className="text-right">
                 <p className="text-sm font-bold text-green-600">+{op.montant.toLocaleString()} F</p>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full ${op.statut === "TerminÃ©" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}`}>{op.statut}</span>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full ${op.statut === "Terminé" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}`}>{op.statut}</span>
               </div>
             </div>
           ))}

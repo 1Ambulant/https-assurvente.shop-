@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Wrench, ShoppingCart, ChevronRight, Star, MapPin, CheckCircle2, Clock, Shield, Package } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Wrench, ShoppingCart, ChevronRight, Star, MapPin, CheckCircle2, Clock, Shield } from "lucide-react";
 import { useAudio } from "../hooks/useAudio";
+import ImageUploader from "../components/ImageUploader";
 import api from "../lib/api";
 
 const POPULAR_PARTS = [
   { name: "Alternateur Corolla", price: "45 000 F", condition: "Occasion", brand: "Toyota" },
-  { name: "Demarreur 308", price: "38 000 F", condition: "Neuf", brand: "Peugeot" },
+  { name: "DÈmarreur 308", price: "38 000 F", condition: "Neuf", brand: "Peugeot" },
   { name: "Plaquettes Clio", price: "22 000 F", condition: "Occasion", brand: "Renault" },
   { name: "Batterie 60Ah", price: "35 000 F", condition: "Neuf", brand: "Varta" },
 ];
@@ -26,7 +27,7 @@ export default function Home() {
   const [interventionId, setInterventionId] = useState(null);
   const [form, setForm] = useState({
     telephone_client: "", marque: "", modele: "", annee: "",
-    symptomes: "", latitude_client: 14.7167, longitude_client: -17.4677, adresse_client: "Dakar, Senegal",
+    symptomes: "", latitude_client: 14.7167, longitude_client: -17.4677, adresse_client: "Dakar, SÈnÈgal",
   });
 
   const handleSubmit = async (e) => {
@@ -48,7 +49,7 @@ export default function Home() {
     try {
       const res = await api.choisirOption(interventionId, quote_id);
       play("success");
-      alert(`Commande ${res.reference} creee ! Total: ${res.total_client} FCFA`);
+      alert(`Commande ${res.reference} crÈÈe ! Total: ${res.total_client} FCFA`);
       setStep("form");
       setForm({ ...form, telephone_client: "", symptomes: "" });
     } catch (err) { play("error"); alert(err.message); }
@@ -61,18 +62,13 @@ export default function Home() {
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl" />
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-8 -mb-8 blur-xl" />
         <div className="relative">
-          <h2 className="text-2xl font-bold mb-2 leading-tight">Votre mecano<br/>en 30 minutes</h2>
-          <p className="text-blue-100 text-sm mb-4">Pieces d'occasion + Main d'oeuvre a domicile</p>
+          <h2 className="text-2xl font-bold mb-2 leading-tight">Votre mÈcano<br/>en 30 minutes</h2>
+          <p className="text-blue-100 text-sm mb-4">PiËces d'occasion + Main d'úuvre ‡ domicile</p>
           <div className="flex flex-wrap gap-2">
-            {["‚ö° Rapide", "‚úÖ Garanti", "üí∞ Transparent"].map((tag) => (
+            {["? Rapide", "? Garanti", "?? Transparent"].map((tag) => (
               <span key={tag} className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium">{tag}</span>
             ))}
           </div>
-          <Link to="/urgence">
-            <button className="w-full bg-orange-500 hover:bg-orange-400 text-white p-4 rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-orange-900/50 mt-4">
-              Intervention d'urgence
-            </button>
-          </Link>
         </div>
       </section>
 
@@ -93,9 +89,9 @@ export default function Home() {
       <section className="animate-slide-up">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-bold text-gray-800 flex items-center gap-2 text-sm">
-            <ShoppingCart size={16} className="text-blue-600" />Pieces populaires
+            <ShoppingCart size={16} className="text-blue-600" />PiËces populaires
           </h3>
-          <span className="text-xs text-blue-600 font-semibold cursor-pointer">Voir tout ‚Üí</span>
+          <span className="text-xs text-blue-600 font-semibold cursor-pointer">Voir tout ?</span>
         </div>
         <div className="grid grid-cols-2 gap-3">
           {POPULAR_PARTS.map((p, i) => (
@@ -117,7 +113,7 @@ export default function Home() {
       <section className="animate-slide-up">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-bold text-gray-800 flex items-center gap-2 text-sm">
-            <Wrench size={16} className="text-blue-600" />Mecanos disponibles
+            <Wrench size={16} className="text-blue-600" />MÈcanos disponibles
           </h3>
         </div>
         <div className="space-y-3">
@@ -146,18 +142,18 @@ export default function Home() {
             <h3 className="font-bold text-gray-800 mb-1">Demander une intervention</h3>
             <p className="text-xs text-gray-500 mb-4">Remplissez le formulaire, nous trouvons le meilleur prix.</p>
             <form onSubmit={handleSubmit} className="space-y-3">
-              <input type="tel" inputMode="tel" placeholder="Telephone (77 XXX XX XX)"
+              <input type="tel" inputMode="tel" placeholder="TÈlÈphone (77 XXX XX XX)"
                 className="w-full p-3.5 bg-gray-50 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
                 value={form.telephone_client} onChange={(e) => setForm({ ...form, telephone_client: e.target.value })} required />
               <div className="grid grid-cols-2 gap-3">
                 <input type="text" placeholder="Marque" className="w-full p-3.5 bg-gray-50 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
                   value={form.marque} onChange={(e) => setForm({ ...form, marque: e.target.value })} required />
-                <input type="text" placeholder="Modele" className="w-full p-3.5 bg-gray-50 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                <input type="text" placeholder="ModËle" className="w-full p-3.5 bg-gray-50 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
                   value={form.modele} onChange={(e) => setForm({ ...form, modele: e.target.value })} required />
               </div>
-              <input type="number" inputMode="numeric" placeholder="Annee (ex: 2018)" className="w-full p-3.5 bg-gray-50 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+              <input type="number" inputMode="numeric" placeholder="AnnÈe (ex: 2018)" className="w-full p-3.5 bg-gray-50 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
                 value={form.annee} onChange={(e) => setForm({ ...form, annee: e.target.value })} />
-              <textarea placeholder="Decrivez les symptomes..." rows={3} className="w-full p-3.5 bg-gray-50 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all resize-none"
+              <textarea placeholder="DÈcrivez les symptÙmes..." rows={3} className="w-full p-3.5 bg-gray-50 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all resize-none"
                 value={form.symptomes} onChange={(e) => setForm({ ...form, symptomes: e.target.value })} required />
               <button disabled={loading} className="w-full bg-blue-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 active:bg-blue-700 disabled:opacity-50 shadow-lg shadow-blue-200 transition-all">
                 {loading ? "Recherche..." : <>Obtenir un devis <ChevronRight size={18} /></>}
@@ -167,7 +163,7 @@ export default function Home() {
         )}
         {step === "options" && (
           <>
-            <h3 className="font-bold text-gray-800 mb-1">{options.length} options trouvees</h3>
+            <h3 className="font-bold text-gray-800 mb-1">{options.length} options trouvÈes</h3>
             <p className="text-xs text-gray-500 mb-4">Choisissez la meilleure offre.</p>
             <div className="space-y-3 max-h-96 overflow-y-auto no-scrollbar">
               {options.map((opt) => (
@@ -178,17 +174,17 @@ export default function Home() {
                     <span className="text-blue-600 font-bold text-lg">{opt.total_client?.toLocaleString()} F</span>
                   </div>
                   <div className="space-y-1 text-xs text-gray-600">
-                    <p className="flex justify-between"><span className="flex items-center gap-1"><Wrench size={11} className="text-gray-400" /> {opt.mecano_nom}</span> <span>{opt.mecano_distance_km} km</span></p>
-                    <p className="flex justify-between"><span className="flex items-center gap-1"><Package size={11} className="text-gray-400" /> {opt.vendeur_nom}</span> <span>{opt.mode_recuperation === "mecano_recupere" ? "Mecano recupere" : "Livraison"}</span></p>
+                    <p className="flex justify-between"><span>?? {opt.mecano_nom}</span> <span>{opt.mecano_distance_km} km</span></p>
+                    <p className="flex justify-between"><span>?? {opt.vendeur_nom}</span> <span>{opt.mode_recuperation === "mecano_recupere" ? "MÈcano rÈcupËre" : "Livraison"}</span></p>
                     <div className="pt-2 mt-2 border-t border-gray-200 flex justify-between text-gray-500">
-                      <span>Piece: {opt.prix_piece_client?.toLocaleString()} F</span>
+                      <span>PiËce: {opt.prix_piece_client?.toLocaleString()} F</span>
                       <span>M.O.: {opt.prix_mecano_client?.toLocaleString()} F</span>
                     </div>
                   </div>
                 </button>
               ))}
             </div>
-            <button onClick={() => setStep("form")} className="w-full mt-3 text-gray-500 text-sm py-2">‚Üê Retour</button>
+            <button onClick={() => setStep("form")} className="w-full mt-3 text-gray-500 text-sm py-2">? Retour</button>
           </>
         )}
         {step === "success" && (
@@ -196,38 +192,18 @@ export default function Home() {
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 size={32} className="text-green-600" />
             </div>
-            <h3 className="font-bold text-gray-800 mb-2">Demande enregistree !</h3>
-            <p className="text-sm text-gray-500 mb-4">Notre equipe vous recontacte sous 2-4h.</p>
+            <h3 className="font-bold text-gray-800 mb-2">Demande enregistrÈe !</h3>
+            <p className="text-sm text-gray-500 mb-4">Notre Èquipe vous recontacte sous 2-4h.</p>
             <button onClick={() => setStep("form")} className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold">Nouvelle demande</button>
           </div>
         )}
       </section>
 
-      <footer className="pt-6 pb-2 text-center border-t border-gray-100">
-        <p className="text-sm font-bold text-gray-800">FlashMecano</p>
-        <p className="text-xs text-gray-400 mt-1">¬© 2026 FlashMecano</p>
-        <p className="text-xs text-gray-400 mt-1">Dakar, Senegal</p>
-        <p className="text-xs text-gray-400 mt-1">+221 77 861 06 60</p>
-        <div className="flex items-center justify-center gap-2 mt-3 text-[11px] text-blue-600">
-          <button type="button" className="hover:underline">CGV</button>
-          <span className="text-gray-300">|</span>
-          <button type="button" className="hover:underline">Mentions legales</button>
-          <span className="text-gray-300">|</span>
-          <button type="button" className="hover:underline">Confidentialite</button>
-        </div>
-        <div className="flex items-center justify-center gap-2 mt-2 text-[11px]">
-          <span className="text-gray-400">Espace Vendeur</span>
-          <span className="text-gray-300">|</span>
-          <a
-            href="https://wa.me/221789262218?text=Bonjour%20je%20veux%20inscrire%20mon%20garage"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-green-600 hover:underline"
-          >
-            Devenir vendeur via WhatsApp
-          </a>
-        </div>
-      </footer>
+      <section className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5">
+        <h3 className="font-bold text-gray-800 mb-1">Uploader une piËce</h3>
+        <p className="text-xs text-gray-500 mb-3">Test de compression auto (max 80KB)</p>
+        <ImageUploader productId="demo" />
+      </section>
     </div>
   );
 }
