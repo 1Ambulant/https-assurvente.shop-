@@ -19,7 +19,10 @@ export default function App() {
         <Route path="/chat-lingua" element={<ChatLingua />} />
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
-          <Route path="/historique" element={<Historique />} />
+          <Route path="/mes-commandes" element={<Historique />} />
+          <Route path="/cgv" element={<div className="p-8 text-center text-white">CGV — Bientôt disponible</div>} />
+          <Route path="/mentions-legales" element={<div className="p-8 text-center text-white">Mentions légales — Bientôt disponible</div>} />
+          <Route path="/confidentialite" element={<div className="p-8 text-center text-white">Confidentialité — Bientôt disponible</div>} />
           <Route path="/admin" element={
             <ProtectedRoute allowedRoles={["admin"]}>
               <AdminDashboard />
