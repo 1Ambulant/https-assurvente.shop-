@@ -1,17 +1,9 @@
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link } from "react-router-dom";
 import { Sun, Moon } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 
 export default function Layout() {
-  const location = useLocation();
   const { isDark, toggleTheme } = useTheme();
-  const isActive = (p) => location.pathname === p;
-
-  const navItems = [
-    { to: "/", emoji: "🏠", label: "Accueil" },
-    { to: "/chat-lingua", emoji: "🤖", label: "MyLingua" },
-    { to: "/mes-commandes", emoji: "📋", label: "Mes commandes" },
-  ];
 
   return (
     <div className={`h-screen w-full flex justify-center ${isDark ? "bg-gray-950" : "bg-gray-100"}`}>
@@ -29,7 +21,7 @@ export default function Layout() {
         </header>
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar scroll-smooth">
-          <div className="p-4 pb-28 min-h-full flex flex-col">
+          <div className="p-4 pb-6 min-h-full flex flex-col">
             <div className="flex-1">
               <Outlet />
             </div>
@@ -53,7 +45,7 @@ export default function Layout() {
                 <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs">
                   <Link to="/partner" className="text-green-400 hover:underline">Espace Vendeur</Link>
                   <Link to="/mes-commandes" className="text-blue-400 hover:underline">Mes commandes</Link>
-                  <a href="https://wa.me/221778610660?text=Bonjour%20FlashMecano%2C%20je%20souhaite%20m'inscrire%20comme%20vendeur%20de%20pieces%20ou%20mecanicien%20partenaire."
+                  <a href="https://wa.me/221789262218?text=Bonjour%20FlashMecano%2C%20je%20souhaite%20m'inscrire%20comme%20vendeur%20de%20pieces%20ou%20mecanicien%20partenaire."
                      target="_blank" rel="noopener noreferrer"
                      className="text-green-400 hover:underline">Devenir vendeur via WhatsApp</a>
                 </div>
@@ -62,34 +54,13 @@ export default function Layout() {
                 <div className="text-[10px] text-gray-500 space-y-1 pt-2 border-t border-gray-800">
                   <p>© 2026 FlashMecano</p>
                   <p>📍 Dakar, Sénégal</p>
-                  <p>📞 +221 77 861 06 60</p>
+                  <p>📞 +221 78 926 22 18</p>
                   <p className="text-gray-600">flashmecano.com</p>
                 </div>
               </div>
             </footer>
           </div>
         </main>
-
-        <nav className={`flex-none absolute bottom-0 w-full backdrop-blur-sm border-t z-30 pb-safe shadow-[0_-4px_12px_rgba(0,0,0,0.05)] ${
-          isDark ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200"
-        }`}>
-          <div className="flex justify-around items-center py-2">
-            {navItems.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${
-                  isActive(item.to)
-                    ? "text-blue-600 bg-blue-50"
-                    : isDark ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-600"
-                }`}
-              >
-                <span className="text-xl leading-none">{item.emoji}</span>
-                <span className="text-[10px] font-medium">{item.label}</span>
-              </Link>
-            ))}
-          </div>
-        </nav>
       </div>
     </div>
   );
