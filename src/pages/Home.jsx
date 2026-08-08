@@ -1,19 +1,20 @@
 import { Link } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
-import { Wrench, MapPin, Star, Settings, MessageCircle } from "lucide-react";
+import { Wrench, MapPin, Star, Settings, MessageCircle, X } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function Home() {
   const { isDark } = useTheme();
   const [pieces, setPieces] = useState([]);
   const [mecanos, setMecanos] = useState([]);
+  const [selectedPiece, setSelectedPiece] = useState(null);
 
   useEffect(() => {
     setPieces([
-      { id: 1, nom: "Demarreur Peugeot 308", prix: 45000 },
-      { id: 2, nom: "Alternateur Toyota Corolla", prix: 38000 },
-      { id: 3, nom: "Embrayage Renault Clio 4", prix: 62000 },
-      { id: 4, nom: "Courroie Distribution", prix: 25000 },
+      { id: 1, nom: "Demarreur Peugeot 308", prix: 45000, description: "Demarreur reconditionne, teste et garanti. Compatible Peugeot 308 essence et diesel." },
+      { id: 2, nom: "Alternateur Toyota Corolla", prix: 38000, description: "Alternateur d'occasion controle, forte capacite de charge. Compatible Toyota Corolla." },
+      { id: 3, nom: "Embrayage Renault Clio 4", prix: 62000, description: "Kit d'embrayage complet (disque, mecanisme, butee) pour Renault Clio 4." },
+      { id: 4, nom: "Courroie Distribution", prix: 25000, description: "Kit courroie de distribution + galets, adaptable a la plupart des vehicules courants." },
     ]);
     setMecanos([
       { id: 1, nom: "Amadou Garage", note: 4.8, distance: "2.3 km", specialite: "Moteur" },
@@ -69,13 +70,17 @@ export default function Home() {
         <h2 className={`text-lg font-bold mb-4 ${sectionTitle}`}>Pieces populaires</h2>
         <div className="grid grid-cols-2 gap-3">
           {pieces.map((p) => (
-            <div key={p.id} className={`${cardBg} border rounded-2xl p-3`}>
+            <button
+              key={p.id}
+              onClick={() => setSelectedPiece(p)}
+              className={`${cardBg} border rounded-2xl p-3 text-left cursor-pointer hover:border-orange-400 hover:shadow-md active:scale-[0.97] transition-all`}
+            >
               <div className={`w-full h-24 ${isDark ? "bg-orange-950/40" : "bg-orange-50"} rounded-xl mb-2 flex items-center justify-center`}>
                 <Settings size={28} className="text-orange-500" />
               </div>
               <h3 className="font-semibold text-sm mb-1 leading-tight">{p.nom}</h3>
               <p className="text-orange-500 font-bold text-sm">{p.prix.toLocaleString()} FCFA</p>
-            </div>
+            </button>
           ))}
         </div>
       </section>
@@ -104,6 +109,36 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* Modal detail piece */}
+      {selectedPiece && (
+        <div
+          className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center"
+          onClick={() => setSelectedPiece(null)}
+        >
+          <div
+            className={`w-full max-w-md ${isDark ? "bg-gray-900" : "bg-white"} rounded-t-3xl p-5 pb-8`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 ${isDark ? "bg-orange-950/40" : "bg-orange-50"}`}>
+                <Settings size={26} className="text-orange-500" />
+              </div>
+              <button onClick={() => setSelectedPiece(null)} className={`p-2 rounded-full ${isDark ? "text-gray-400 hover:bg-gray-800" : "text-gray-500 hover:bg-gray-100"}`}>
+                <X size={20} />
+              </button>
+            </div>
+            <h3 className={`text-lg font-bold mb-1 ${sectionTitle}`}>{selectedPiece.nom}</h3>
+            <p className="text-orange-500 font-bold text-xl mb-3">{selectedPiece.prix.toLocaleString()} FCFA</p>
+            <p className={`text-sm leading-relaxed mb-5 ${mutedText}`}>{selectedPiece.description}</p>
+            <Link to="/urgence" onClick={() => setSelectedPiece(null)}>
+              <button className="w-full bg-orange-500 hover:bg-orange-400 text-white p-3.5 rounded-2xl font-bold active:scale-95 transition-all">
+                Demander cette piece
+              </button>
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -21,7 +21,7 @@ export default function Layout() {
         </header>
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar scroll-smooth">
-          <div className="p-4 pb-6 min-h-full flex flex-col">
+          <div className="p-4 pb-0 min-h-full flex flex-col">
             <div className="flex-1">
               <Outlet />
             </div>

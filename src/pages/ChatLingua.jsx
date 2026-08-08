@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, ArrowLeft, Wrench, MapPin, Package, CheckCircle2, Mic, Volume2, VolumeX, Phone, MessageCircle, Truck, ClipboardCheck, Star, Navigation, MapPinned, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
 
 const STEPS = {
   ASK_SYMPTOMS: "ask_symptoms",
@@ -136,6 +137,7 @@ function formatMapsLink(lat, lng, label) {
 
 export default function ChatLingua() {
   const navigate = useNavigate();
+  const { isDark } = useTheme();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [step, setStep] = useState(STEPS.ASK_SYMPTOMS);
@@ -522,12 +524,28 @@ export default function ChatLingua() {
   // Position client (mock pour demo — remplacer par vraies coords)
   const clientPos = { lat: 14.7167, lng: -17.4677, address: form.adresse_client || "Dakar, Senegal" };
 
+  const pageBg = isDark ? "bg-gray-950 text-white" : "bg-white text-gray-900";
+  const headerBg = isDark ? "border-gray-800 bg-gray-950" : "border-gray-200 bg-white";
+  const headerHover = isDark ? "hover:bg-gray-800" : "hover:bg-gray-100";
+  const mutedText = isDark ? "text-gray-400" : "text-gray-500";
+  const botBubble = isDark ? "bg-gray-800 text-gray-100" : "bg-gray-100 text-gray-800";
+  const cardBg = isDark ? "bg-gray-800 border-gray-700" : "bg-gray-50 border-gray-200";
+  const cardMuted = isDark ? "text-gray-300" : "text-gray-600";
+  const cardMuted2 = isDark ? "text-gray-400" : "text-gray-500";
+  const innerCardBg = isDark ? "bg-gray-900" : "bg-white border border-gray-200";
+  const inputBarBg = isDark ? "border-gray-800 bg-gray-900" : "border-gray-200 bg-white";
+  const inputPillBg = isDark ? "bg-gray-800" : "bg-gray-100";
+  const inputText = isDark ? "text-white placeholder-gray-500" : "text-gray-900 placeholder-gray-400";
+  const inputIconIdle = isDark ? "text-gray-400 hover:text-white" : "text-gray-500 hover:text-gray-900";
+  const loadingBubble = isDark ? "bg-gray-800 text-gray-400" : "bg-gray-100 text-gray-500";
+  const chipHover = isDark ? "hover:bg-gray-700" : "hover:bg-gray-200";
+
   return (
-    <div className="h-screen bg-gray-950 text-white flex flex-col">
+    <div className={`h-screen flex flex-col ${pageBg}`}>
       {/* Header */}
-      <header className="flex items-center gap-3 px-4 py-3 border-b border-gray-800 bg-gray-950 shrink-0">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-gray-800 rounded-full transition-colors"><ArrowLeft size={20} /></button>
-        <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-xs font-bold">FM</div>
+      <header className={`flex items-center gap-3 px-4 py-3 border-b shrink-0 ${headerBg}`}>
+        <button onClick={() => navigate(-1)} className={`p-2 -ml-2 rounded-full transition-colors ${headerHover}`}><ArrowLeft size={20} /></button>
+        <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-xs font-bold text-white">FM</div>
         <div className="flex-1">
           <h1 className="font-bold text-sm">MyLingua</h1>
           <p className="text-[10px] text-green-400 flex items-center gap-1"><span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />Comparateur d'urgence</p>
@@ -535,7 +553,7 @@ export default function ChatLingua() {
         <button onClick={() => {
           if (audioEnabled) window.speechSynthesis.cancel();
           setAudioEnabled(!audioEnabled);
-        }} className={`p-2 rounded-full transition-colors ${audioEnabled ? "text-blue-400" : "text-gray-600"}`}>
+        }} className={`p-2 rounded-full transition-colors ${audioEnabled ? "text-blue-400" : mutedText}`}>
           {audioEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
         </button>
       </header>
@@ -544,7 +562,7 @@ export default function ChatLingua() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-line ${m.role === "user" ? "bg-blue-600 text-white rounded-br-md" : "bg-gray-800 text-gray-100 rounded-bl-md"}`}>{m.text}</div>
+            <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-line ${m.role === "user" ? "bg-blue-600 text-white rounded-br-md" : `${botBubble} rounded-bl-md`}`}>{m.text}</div>
           </div>
         ))}
 
@@ -556,15 +574,15 @@ export default function ChatLingua() {
                 key={opt.mecano_nom}
                 onClick={() => handleOptionClick({ option_label: String.fromCharCode(65 + idx) })}
                 disabled={loading}
-                className="w-full text-left bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-2xl p-4 active:bg-gray-700 transition-all disabled:opacity-50"
+                className={`w-full text-left border hover:border-blue-500 rounded-2xl p-4 transition-all disabled:opacity-50 ${cardBg}`}
               >
                 <div className="flex justify-between items-start mb-2">
                   <span className="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg">Option {String.fromCharCode(65 + idx)}</span>
-                  <span className="text-green-400 font-bold text-lg">{opt.prix_mecano_client?.toLocaleString()} F</span>
+                  <span className="text-green-500 font-bold text-lg">{opt.prix_mecano_client?.toLocaleString()} F</span>
                 </div>
-                <div className="space-y-1.5 text-xs text-gray-300">
-                  <p className="flex items-center gap-2"><Wrench size={12} className="text-gray-500" />{opt.mecano_nom}<span className="text-gray-500 flex items-center gap-1"><MapPin size={10} /> {opt.mecano_distance_km} km</span></p>
-                  <p className="text-gray-400">Main d'oeuvre + Transport</p>
+                <div className={`space-y-1.5 text-xs ${cardMuted}`}>
+                  <p className="flex items-center gap-2"><Wrench size={12} className={cardMuted2} />{opt.mecano_nom}<span className={`${cardMuted2} flex items-center gap-1`}><MapPin size={10} /> {opt.mecano_distance_km} km</span></p>
+                  <p className={cardMuted2}>Main d'oeuvre + Transport</p>
                 </div>
               </button>
             ))}
@@ -575,15 +593,15 @@ export default function ChatLingua() {
         {step === STEPS.CHOOSE_PIECE && options.length > 0 && (
           <div className="space-y-3 mt-2">
             {options.map((opt) => (
-              <button key={opt.quote_id} onClick={() => handleOptionClick(opt)} disabled={loading} className="w-full text-left bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-2xl p-4 active:bg-gray-700 transition-all disabled:opacity-50">
+              <button key={opt.quote_id} onClick={() => handleOptionClick(opt)} disabled={loading} className={`w-full text-left border hover:border-blue-500 rounded-2xl p-4 transition-all disabled:opacity-50 ${cardBg}`}>
                 <div className="flex justify-between items-start mb-2">
                   <span className="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg">Option {opt.option_label}</span>
-                  <span className="text-green-400 font-bold text-lg">{opt.total_client?.toLocaleString()} F</span>
+                  <span className="text-green-500 font-bold text-lg">{opt.total_client?.toLocaleString()} F</span>
                 </div>
-                <div className="space-y-1.5 text-xs text-gray-300">
-                  <p className="flex items-center gap-2"><Wrench size={12} className="text-gray-500" />{opt.mecano_nom}<span className="text-gray-500 flex items-center gap-1"><MapPin size={10} /> {opt.mecano_distance_km} km</span></p>
-                  <p className="flex items-center gap-2"><Package size={12} className="text-gray-500" />{opt.vendeur_nom}</p>
-                  <div className="flex gap-3 pt-2 mt-1 border-t border-gray-700 text-gray-400">
+                <div className={`space-y-1.5 text-xs ${cardMuted}`}>
+                  <p className="flex items-center gap-2"><Wrench size={12} className={cardMuted2} />{opt.mecano_nom}<span className={`${cardMuted2} flex items-center gap-1`}><MapPin size={10} /> {opt.mecano_distance_km} km</span></p>
+                  <p className="flex items-center gap-2"><Package size={12} className={cardMuted2} />{opt.vendeur_nom}</p>
+                  <div className={`flex gap-3 pt-2 mt-1 border-t ${isDark ? "border-gray-700" : "border-gray-200"} ${cardMuted2}`}>
                     <span>Piece: {opt.prix_piece_client?.toLocaleString()} F</span>
                     <span>M.O.: {opt.prix_mecano_client?.toLocaleString()} F</span>
                     <span>Transp.: {opt.prix_transport_client?.toLocaleString()} F</span>
@@ -606,46 +624,46 @@ export default function ChatLingua() {
         {/* Contacts after payment — LOCALISATION BIDIRECTIONNELLE */}
         {step === STEPS.SHOW_CONTACTS && contacts && (
           <div className="space-y-3 mt-2">
-            <div className="bg-gray-800 border border-green-700 rounded-2xl p-4">
-              <h3 className="font-bold text-green-400 mb-2 flex items-center gap-2"><CheckCircle2 size={16} />Paiement confirme !</h3>
-              <p className="text-xs text-gray-400 mb-3">Vos contacts sont debloques. Votre position est partagee avec le vendeur et le mecanicien.</p>
+            <div className={`border rounded-2xl p-4 ${isDark ? "bg-gray-800 border-green-700" : "bg-gray-50 border-green-300"}`}>
+              <h3 className="font-bold text-green-500 mb-2 flex items-center gap-2"><CheckCircle2 size={16} />Paiement confirme !</h3>
+              <p className={`text-xs mb-3 ${mutedText}`}>Vos contacts sont debloques. Votre position est partagee avec le vendeur et le mecanicien.</p>
 
               {/* Votre position partagee */}
-              <div className="bg-blue-900/30 border border-blue-700 rounded-xl p-3 mb-3">
-                <p className="text-xs text-blue-400 mb-1 flex items-center gap-1"><MapPinned size={12} />Votre position (partagee)</p>
+              <div className={`border rounded-xl p-3 mb-3 ${isDark ? "bg-blue-900/30 border-blue-700" : "bg-blue-50 border-blue-200"}`}>
+                <p className="text-xs text-blue-500 mb-1 flex items-center gap-1"><MapPinned size={12} />Votre position (partagee)</p>
                 <p className="text-sm font-medium">{clientPos.address}</p>
                 <div className="flex gap-2 mt-2">
-                  <a href={formatMapsLink(clientPos.lat, clientPos.lng, "Ma position")} target="_blank" rel="noopener noreferrer" className="text-xs bg-blue-600 hover:bg-blue-500 px-2 py-1 rounded-lg flex items-center gap-1 transition-colors">
+                  <a href={formatMapsLink(clientPos.lat, clientPos.lng, "Ma position")} target="_blank" rel="noopener noreferrer" className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded-lg flex items-center gap-1 transition-colors">
                     <Navigation size={10} />Voir sur Maps
                   </a>
                 </div>
-                <p className="text-[10px] text-gray-500 mt-1">Le vendeur et le mecanicien voient cette position pour vous localiser.</p>
+                <p className={`text-[10px] mt-1 ${cardMuted2}`}>Le vendeur et le mecanicien voient cette position pour vous localiser.</p>
               </div>
 
               {/* Vendeur */}
-              <div className="bg-gray-900 rounded-xl p-3 mb-3">
-                <p className="text-xs text-orange-400 mb-1 flex items-center gap-1"><Package size={12} />Vendeur de pieces</p>
+              <div className={`rounded-xl p-3 mb-3 ${innerCardBg}`}>
+                <p className="text-xs text-orange-500 mb-1 flex items-center gap-1"><Package size={12} />Vendeur de pieces</p>
                 <p className="font-semibold">{contacts.vendeur?.nom || "N/A"}</p>
                 <div className="flex items-center gap-2 mt-1 text-sm">
-                  <a href={`tel:${contacts.vendeur?.telephone}`} className="text-blue-400 hover:text-blue-300 flex items-center gap-1"><Phone size={14} />Appeler</a>
-                  <a href={formatWhatsAppLink(contacts.vendeur?.telephone || "", `Bonjour, je suis client FlashMecano, commande ${order?.reference || ""}. Je suis a ${clientPos.address}. Pouvez-vous confirmer la livraison ?`)} target="_blank" rel="noopener noreferrer" className="text-green-400 hover:text-green-300 flex items-center gap-1"><MessageCircle size={14} />WhatsApp</a>
+                  <a href={`tel:${contacts.vendeur?.telephone}`} className="text-blue-500 hover:text-blue-400 flex items-center gap-1"><Phone size={14} />Appeler</a>
+                  <a href={formatWhatsAppLink(contacts.vendeur?.telephone || "", `Bonjour, je suis client FlashMecano, commande ${order?.reference || ""}. Je suis a ${clientPos.address}. Pouvez-vous confirmer la livraison ?`)} target="_blank" rel="noopener noreferrer" className="text-green-500 hover:text-green-400 flex items-center gap-1"><MessageCircle size={14} />WhatsApp</a>
                 </div>
-                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1"><MapPin size={10} />{contacts.vendeur?.adresse || "Adresse non disponible"}</p>
-                <a href={formatMapsLink(contacts.vendeur?.latitude || 14.7167, contacts.vendeur?.longitude || -17.4677, contacts.vendeur?.nom || "Vendeur")} target="_blank" rel="noopener noreferrer" className="text-xs bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded-lg flex items-center gap-1 mt-2 w-fit transition-colors">
+                <p className={`text-xs mt-1 flex items-center gap-1 ${cardMuted2}`}><MapPin size={10} />{contacts.vendeur?.adresse || "Adresse non disponible"}</p>
+                <a href={formatMapsLink(contacts.vendeur?.latitude || 14.7167, contacts.vendeur?.longitude || -17.4677, contacts.vendeur?.nom || "Vendeur")} target="_blank" rel="noopener noreferrer" className={`text-xs px-2 py-1 rounded-lg flex items-center gap-1 mt-2 w-fit transition-colors ${inputPillBg} ${chipHover}`}>
                   <Navigation size={10} />Itineraire vers le vendeur
                 </a>
               </div>
 
               {/* Mecano */}
-              <div className="bg-gray-900 rounded-xl p-3 mb-3">
-                <p className="text-xs text-blue-400 mb-1 flex items-center gap-1"><Wrench size={12} />Mecanicien</p>
+              <div className={`rounded-xl p-3 mb-3 ${innerCardBg}`}>
+                <p className="text-xs text-blue-500 mb-1 flex items-center gap-1"><Wrench size={12} />Mecanicien</p>
                 <p className="font-semibold">{contacts.mecano?.nom || "N/A"}</p>
                 <div className="flex items-center gap-2 mt-1 text-sm">
-                  <a href={`tel:${contacts.mecano?.telephone}`} className="text-blue-400 hover:text-blue-300 flex items-center gap-1"><Phone size={14} />Appeler</a>
-                  <a href={formatWhatsAppLink(contacts.mecano?.telephone || "", `Bonjour, je suis client FlashMecano, commande ${order?.reference || ""}. Je suis a ${clientPos.address}. La piece arrive bientot, pouvez-vous confirmer votre disponibilite ?`)} target="_blank" rel="noopener noreferrer" className="text-green-400 hover:text-green-300 flex items-center gap-1"><MessageCircle size={14} />WhatsApp</a>
+                  <a href={`tel:${contacts.mecano?.telephone}`} className="text-blue-500 hover:text-blue-400 flex items-center gap-1"><Phone size={14} />Appeler</a>
+                  <a href={formatWhatsAppLink(contacts.mecano?.telephone || "", `Bonjour, je suis client FlashMecano, commande ${order?.reference || ""}. Je suis a ${clientPos.address}. La piece arrive bientot, pouvez-vous confirmer votre disponibilite ?`)} target="_blank" rel="noopener noreferrer" className="text-green-500 hover:text-green-400 flex items-center gap-1"><MessageCircle size={14} />WhatsApp</a>
                 </div>
-                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1"><MapPin size={10} />{contacts.mecano?.distance || "Distance non disponible"}</p>
-                <a href={formatMapsLink(contacts.mecano?.latitude || 14.7167, contacts.mecano?.longitude || -17.4677, contacts.mecano?.nom || "Mecanicien")} target="_blank" rel="noopener noreferrer" className="text-xs bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded-lg flex items-center gap-1 mt-2 w-fit transition-colors">
+                <p className={`text-xs mt-1 flex items-center gap-1 ${cardMuted2}`}><MapPin size={10} />{contacts.mecano?.distance || "Distance non disponible"}</p>
+                <a href={formatMapsLink(contacts.mecano?.latitude || 14.7167, contacts.mecano?.longitude || -17.4677, contacts.mecano?.nom || "Mecanicien")} target="_blank" rel="noopener noreferrer" className={`text-xs px-2 py-1 rounded-lg flex items-center gap-1 mt-2 w-fit transition-colors ${inputPillBg} ${chipHover}`}>
                   <Navigation size={10} />Itineraire vers le mecanicien
                 </a>
               </div>
@@ -669,11 +687,11 @@ export default function ChatLingua() {
         {/* Rating */}
         {step === STEPS.RATING && (
           <div className="flex flex-col items-center mt-4 space-y-3">
-            <p className="text-sm text-gray-300">Cliquez pour noter :</p>
+            <p className={`text-sm ${cardMuted}`}>Cliquez pour noter :</p>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button key={star} onClick={() => handleRating(star)} disabled={loading} className="p-2 transition-transform active:scale-110 disabled:opacity-50">
-                  <Star size={32} className={star <= rating ? "text-yellow-400 fill-yellow-400" : "text-gray-600"} />
+                  <Star size={32} className={star <= rating ? "text-yellow-400 fill-yellow-400" : isDark ? "text-gray-600" : "text-gray-300"} />
                 </button>
               ))}
             </div>
@@ -683,8 +701,8 @@ export default function ChatLingua() {
         {/* Loading */}
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-gray-800 rounded-2xl px-4 py-3 text-sm text-gray-400 flex items-center gap-3">
-              <span className="w-4 h-4 border-2 border-gray-600 border-t-orange-500 rounded-full animate-spin" />
+            <div className={`rounded-2xl px-4 py-3 text-sm flex items-center gap-3 ${loadingBubble}`}>
+              <span className={`w-4 h-4 border-2 ${isDark ? "border-gray-600" : "border-gray-300"} border-t-orange-500 rounded-full animate-spin`} />
               MyLingua reflechit...
             </div>
           </div>
@@ -693,11 +711,11 @@ export default function ChatLingua() {
       </div>
 
       {/* Input */}
-      <div className="p-3 pb-safe border-t border-gray-800 bg-gray-900 shrink-0">
-        <div className="flex items-center gap-2 bg-gray-800 rounded-full px-4 py-2">
-          <button onClick={isListening ? stopListening : startListening} className={`p-2 rounded-full transition-colors shrink-0 ${isListening ? "bg-red-500 text-white animate-pulse" : "text-gray-400 hover:text-white"}`}><Mic size={18} /></button>
-          <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholderText} className="flex-1 bg-transparent text-sm outline-none placeholder-gray-500 text-white" disabled={loading || step === STEPS.SEARCHING || step === STEPS.PAYMENT || step === STEPS.SHOW_CONTACTS || step === STEPS.INTERVENTION_STARTED || step === STEPS.RATING || step === STEPS.CLOSED} />
-          <button onClick={handleSend} disabled={loading || !input.trim() || step === STEPS.SHOW_CONTACTS || step === STEPS.INTERVENTION_STARTED || step === STEPS.RATING || step === STEPS.CLOSED} className="p-2 text-blue-400 hover:text-blue-300 disabled:opacity-30 transition-colors shrink-0"><Send size={18} /></button>
+      <div className={`p-3 pb-safe border-t shrink-0 ${inputBarBg}`}>
+        <div className={`flex items-center gap-2 rounded-full px-4 py-2 ${inputPillBg}`}>
+          <button onClick={isListening ? stopListening : startListening} className={`p-2 rounded-full transition-colors shrink-0 ${isListening ? "bg-red-500 text-white animate-pulse" : inputIconIdle}`}><Mic size={18} /></button>
+          <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholderText} className={`flex-1 bg-transparent text-sm outline-none ${inputText}`} disabled={loading || step === STEPS.SEARCHING || step === STEPS.PAYMENT || step === STEPS.SHOW_CONTACTS || step === STEPS.INTERVENTION_STARTED || step === STEPS.RATING || step === STEPS.CLOSED} />
+          <button onClick={handleSend} disabled={loading || !input.trim() || step === STEPS.SHOW_CONTACTS || step === STEPS.INTERVENTION_STARTED || step === STEPS.RATING || step === STEPS.CLOSED} className="p-2 text-blue-500 hover:text-blue-400 disabled:opacity-30 transition-colors shrink-0"><Send size={18} /></button>
         </div>
         {isListening && <p className="text-center text-xs text-red-400 mt-1 animate-pulse">Ecoute en cours... parlez</p>}
       </div>
