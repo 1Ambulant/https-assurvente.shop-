@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
-import { Wrench, MapPin, Star, Phone, Package, MessageCircle } from "lucide-react";
+import { Wrench, MapPin, Star, Settings, MessageCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function Home() {
@@ -70,8 +70,8 @@ export default function Home() {
         <div className="grid grid-cols-2 gap-3">
           {pieces.map((p) => (
             <div key={p.id} className={`${cardBg} border rounded-2xl p-3`}>
-              <div className={`w-full h-24 ${isDark ? "bg-gray-800" : "bg-gray-100"} rounded-xl mb-2 flex items-center justify-center`}>
-                <Package size={28} className="text-gray-400" />
+              <div className={`w-full h-24 ${isDark ? "bg-orange-950/40" : "bg-orange-50"} rounded-xl mb-2 flex items-center justify-center`}>
+                <Settings size={28} className="text-orange-500" />
               </div>
               <h3 className="font-semibold text-sm mb-1 leading-tight">{p.nom}</h3>
               <p className="text-orange-500 font-bold text-sm">{p.prix.toLocaleString()} FCFA</p>
@@ -100,26 +100,10 @@ export default function Home() {
                   <span>{m.distance}</span>
                 </div>
               </div>
-              <button className={`${isDark ? "bg-gray-800" : "bg-gray-100"} p-2.5 rounded-full shrink-0`}>
-                <Phone size={16} className="text-green-500" />
-              </button>
             </div>
           ))}
         </div>
       </section>
-
-      {/* Footer page */}
-      <footer className={`mt-8 py-6 text-center text-xs ${mutedText}`}>
-        <p className="mb-1">FlashMecano — Dakar, Senegal</p>
-        <p>+221 77 861 06 60</p>
-        <div className="flex justify-center gap-3 mt-3">
-          <Link to="/login" className="hover:underline">Espace Vendeur</Link>
-          <span>|</span>
-          <span className="hover:underline">CGV</span>
-          <span>|</span>
-          <span className="hover:underline">Mentions legales</span>
-        </div>
-      </footer>
     </div>
   );
 }

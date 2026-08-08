@@ -1,11 +1,9 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { LogOut, User, Sun, Moon } from "lucide-react";
-import { useAuth } from "../hooks/useAuth";
+import { Sun, Moon } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 
 export default function Layout() {
   const location = useLocation();
-  const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const isActive = (p) => location.pathname === p;
 
@@ -27,15 +25,6 @@ export default function Layout() {
             <button onClick={toggleTheme} className="text-white/80 hover:text-white transition-colors" aria-label="Changer de theme">
               {isDark ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-            {user ? (
-              <button onClick={logout} className="text-white/80 hover:text-white transition-colors">
-                <LogOut size={18} />
-              </button>
-            ) : (
-              <Link to="/login" className="text-white/80 hover:text-white transition-colors">
-                <User size={18} />
-              </Link>
-            )}
           </div>
         </header>
 
@@ -63,7 +52,7 @@ export default function Layout() {
                 {/* Espace pro */}
                 <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs">
                   <Link to="/login?tab=partner" className="text-green-400 hover:underline">Espace Vendeur</Link>
-                  <Link to="/login?tab=client" className="text-blue-400 hover:underline">Mes commandes</Link>
+                  <Link to="/mes-commandes" className="text-blue-400 hover:underline">Mes commandes</Link>
                   <a href="https://wa.me/221778610660?text=Bonjour%20FlashMecano%2C%20je%20souhaite%20m'inscrire%20comme%20vendeur%20de%20pieces%20ou%20mecanicien%20partenaire."
                      target="_blank" rel="noopener noreferrer"
                      className="text-green-400 hover:underline">Devenir vendeur via WhatsApp</a>
