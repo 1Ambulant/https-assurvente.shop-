@@ -1,13 +1,16 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
-import { Wrench, MapPin, Star, Settings, MessageCircle, X } from "lucide-react";
+import { Wrench, MapPin, Star, Settings, MessageCircle, X, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function Home() {
   const { isDark } = useTheme();
+  const navigate = useNavigate();
   const [pieces, setPieces] = useState([]);
   const [mecanos, setMecanos] = useState([]);
   const [selectedPiece, setSelectedPiece] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchMode, setSearchMode] = useState("piece");
 
   useEffect(() => {
     setPieces([
@@ -29,6 +32,14 @@ export default function Home() {
 
   const whatsappInscriptionLink = "https://wa.me/221778610660?text=Bonjour%20FlashMecano%2C%20je%20souhaite%20m'inscrire%20comme%20vendeur%20de%20pieces%20ou%20mecanicien%20partenaire.";
 
+  const handleUrgence = () => navigate("/urgence", { state: { mode: "diagnostic" } });
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    navigate("/urgence", { state: { mode: searchMode, query: searchQuery.trim() } });
+  };
+
   return (
     <div className="pb-6">
       {/* Hero */}
@@ -41,12 +52,52 @@ export default function Home() {
             <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium">Garanti</span>
             <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium">Transparent</span>
           </div>
-          <Link to="/urgence">
-            <button className="w-full bg-orange-500 hover:bg-orange-400 text-white p-4 rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-all mb-3">
-              Intervention d'urgence
-            </button>
-          </Link>
+          <button onClick={handleUrgence} className="w-full bg-orange-500 hover:bg-orange-400 text-white p-4 rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-all mb-3">
+            Intervention d'urgence
+          </button>
         </div>
+      </section>
+
+      {/* Barre de recherche */}
+      <section className="px-4 pt-4">
+        <form onSubmit={handleSearch} className={`${cardBg} border rounded-2xl p-2 shadow-lg space-y-2`}>
+          <div className="flex items-center gap-2 px-2">
+            <Search size={16} className={mutedText} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Rechercher une piece ou un mecanicien..."
+              className={`flex-1 bg-transparent text-sm outline-none py-2 ${isDark ? "text-white placeholder-gray-500" : "text-gray-900 placeholder-gray-400"}`}
+            />
+          </div>
+          <div className="flex items-center gap-2 px-1">
+            <button
+              type="button"
+              onClick={() => setSearchMode("piece")}
+              className={`flex-1 text-xs font-semibold py-2 rounded-xl transition-all ${
+                searchMode === "piece" ? "bg-orange-500 text-white" : isDark ? "bg-gray-800 text-gray-400" : "bg-gray-100 text-gray-500"
+              }`}
+            >
+              🔧 Piece
+            </button>
+            <button
+              type="button"
+              onClick={() => setSearchMode("mecano")}
+              className={`flex-1 text-xs font-semibold py-2 rounded-xl transition-all ${
+                searchMode === "mecano" ? "bg-blue-600 text-white" : isDark ? "bg-gray-800 text-gray-400" : "bg-gray-100 text-gray-500"
+              }`}
+            >
+              🛠️ Mecano
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-xl bg-gray-900 text-white text-xs font-semibold hover:bg-gray-800 transition-all"
+            >
+              Chercher
+            </button>
+          </div>
+        </form>
       </section>
 
       {/* Inscription vendeur — Bien visible */}
@@ -131,11 +182,16 @@ export default function Home() {
             <h3 className={`text-lg font-bold mb-1 ${sectionTitle}`}>{selectedPiece.nom}</h3>
             <p className="text-orange-500 font-bold text-xl mb-3">{selectedPiece.prix.toLocaleString()} FCFA</p>
             <p className={`text-sm leading-relaxed mb-5 ${mutedText}`}>{selectedPiece.description}</p>
-            <Link to="/urgence" onClick={() => setSelectedPiece(null)}>
-              <button className="w-full bg-orange-500 hover:bg-orange-400 text-white p-3.5 rounded-2xl font-bold active:scale-95 transition-all">
-                Demander cette piece
-              </button>
-            </Link>
+            <button
+              onClick={() => {
+                const piece = selectedPiece;
+                setSelectedPiece(null);
+                navigate("/urgence", { state: { mode: "piece", query: piece.nom } });
+              }}
+              className="w-full bg-orange-500 hover:bg-orange-400 text-white p-3.5 rounded-2xl font-bold active:scale-95 transition-all"
+            >
+              Commander maintenant — {selectedPiece.prix.toLocaleString()} FCFA
+            </button>
           </div>
         </div>
       )}

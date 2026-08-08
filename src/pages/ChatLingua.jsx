@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, ArrowLeft, Wrench, MapPin, Package, CheckCircle2, Mic, Volume2, VolumeX, Phone, MessageCircle, Truck, ClipboardCheck, Star, Navigation, MapPinned, User } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 
 const STEPS = {
@@ -137,11 +137,18 @@ function formatMapsLink(lat, lng, label) {
 
 export default function ChatLingua() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isDark } = useTheme();
+  const mode = location.state?.mode || "diagnostic";
+  const initialQuery = location.state?.query || "";
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [step, setStep] = useState(STEPS.ASK_SYMPTOMS);
-  const [form, setForm] = useState({});
+  const [step, setStep] = useState(mode === "diagnostic" ? STEPS.ASK_SYMPTOMS : STEPS.ASK_BRAND);
+  const [form, setForm] = useState(() =>
+    mode !== "diagnostic" && initialQuery
+      ? { symptomes: mode === "piece" ? `Recherche piece: ${initialQuery}` : `Recherche mecanicien: ${initialQuery}` }
+      : {}
+  );
   const [options, setOptions] = useState([]);
   const [interventionId, setInterventionId] = useState(null);
   const [order, setOrder] = useState(null);
@@ -158,6 +165,7 @@ export default function ChatLingua() {
   const [selectedOption, setSelectedOption] = useState(null);
   const bottomRef = useRef(null);
   const recognitionRef = useRef(null);
+  const greetedRef = useRef(false);
 
   const speak = useCallback((text) => {
     if (!audioEnabled || !window.speechSynthesis) return;
@@ -200,10 +208,17 @@ export default function ChatLingua() {
   }, []);
 
   useEffect(() => {
-    if (window.__mylingua_greeted) return;
-    window.__mylingua_greeted = true;
+    if (greetedRef.current) return;
+    greetedRef.current = true;
 
-    const intro = "Bonjour, je suis MyLingua, l'intelligence artificielle de FlashMecano. Decrivez-moi votre panne et je trouve pour vous le meilleur mecanicien + la piece au meilleur prix, en moins de 2 minutes. C'est gratuit et sans engagement.";
+    let intro;
+    if (mode === "piece") {
+      intro = `Je cherche ${initialQuery || "la piece"} pour vous. Quelle est la marque et le modele de votre vehicule ? (cette information est visible sur votre carte grise)`;
+    } else if (mode === "mecano") {
+      intro = "Je trouve un mecanicien pour vous. Quelle est la marque et le modele de votre vehicule ? (cette information est visible sur votre carte grise)";
+    } else {
+      intro = "Bonjour, je suis MyLingua, l'intelligence artificielle de FlashMecano. Decrivez-moi votre panne et je trouve pour vous le meilleur mecanicien + la piece au meilleur prix, en moins de 2 minutes. C'est gratuit et sans engagement.";
+    }
     addBotMessage(intro);
     speak(intro);
   }, []);
@@ -217,6 +232,18 @@ export default function ChatLingua() {
     speak(text);
   };
   const addUserMessage = (text) => setMessages((p) => [...p, { role: "user", text }]);
+
+  const searchOptions = async (fullForm) => {
+    const r1 = await fetch(`${API_BASE}/api/intervention/creer`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(fullForm) });
+    if (!r1.ok) throw new Error("creer " + (await r1.text()));
+    const d1 = await r1.json();
+    setInterventionId(d1.intervention_id);
+
+    const r2 = await fetch(`${API_BASE}/api/intervention/${d1.intervention_id}/chercher-options`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+    if (!r2.ok) throw new Error("options " + (await r2.text()));
+    const d2 = await r2.json();
+    return d2.options || [];
+  };
 
   const handleSendWithText = async (textOverride) => {
     const userText = textOverride || input.trim();
@@ -290,12 +317,33 @@ export default function ChatLingua() {
           }
           const fullForm = { ...form, telephone_client: phone, latitude_client: 14.7167, longitude_client: -17.4677, adresse_client: "Dakar, Senegal" };
           setForm(fullForm);
-          const questions = getFollowUpQuestions(form.symptomes || "");
-          setFollowUpQuestions(questions);
-          setFollowUpIndex(0);
-          setFollowUpAnswers([]);
-          addBotMessage("Merci. Avant de chercher les options, j'aimerais affiner le diagnostic. " + questions[0]);
-          setStep(STEPS.DIAGNOSTIC_FOLLOWUP);
+
+          if (mode === "diagnostic") {
+            const questions = getFollowUpQuestions(form.symptomes || "");
+            setFollowUpQuestions(questions);
+            setFollowUpIndex(0);
+            setFollowUpAnswers([]);
+            addBotMessage("Merci. Avant de chercher les options, j'aimerais affiner le diagnostic. " + questions[0]);
+            setStep(STEPS.DIAGNOSTIC_FOLLOWUP);
+          } else {
+            addBotMessage("Merci. Je recherche les meilleures options pour vous...");
+            setStep(STEPS.SEARCHING);
+            const opts = await searchOptions(fullForm);
+            setOptions(opts);
+            if (opts.length === 0) {
+              addBotMessage("Je n'ai pas trouve d'option disponible dans votre zone pour cette recherche. Notre equipe vous recontacte sous 2h.");
+              setStep("idle");
+            } else if (mode === "mecano") {
+              const mecanosMap = new Map();
+              opts.forEach((o) => { if (!mecanosMap.has(o.mecano_nom)) mecanosMap.set(o.mecano_nom, o); });
+              setMecanoOptions(Array.from(mecanosMap.values()));
+              addBotMessage("Voici les mecaniciens disponibles dans votre zone. Choisissez celui qui vous convient :\n(Tapez la lettre correspondante)");
+              setStep(STEPS.CHOOSE_MECANO);
+            } else {
+              addBotMessage(`Voici les options disponibles${initialQuery ? ` pour "${initialQuery}"` : ""}. Quelle piece choisissez-vous ?\n(Tapez la lettre correspondante)`);
+              setStep(STEPS.CHOOSE_PIECE);
+            }
+          }
           break;
         }
 
@@ -323,15 +371,7 @@ export default function ChatLingua() {
           setStep(STEPS.SEARCHING);
 
           const fullForm = { ...form, telephone_client: form.telephone_client, latitude_client: 14.7167, longitude_client: -17.4677, adresse_client: "Dakar, Senegal" };
-          const r1 = await fetch(`${API_BASE}/api/intervention/creer`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(fullForm) });
-          if (!r1.ok) throw new Error("creer " + (await r1.text()));
-          const d1 = await r1.json();
-          setInterventionId(d1.intervention_id);
-
-          const r2 = await fetch(`${API_BASE}/api/intervention/${d1.intervention_id}/chercher-options`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
-          if (!r2.ok) throw new Error("options " + (await r2.text()));
-          const d2 = await r2.json();
-          const opts = d2.options || [];
+          const opts = await searchOptions(fullForm);
           setOptions(opts);
 
           if (opts.length > 0) {

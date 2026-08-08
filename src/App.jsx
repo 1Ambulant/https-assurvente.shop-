@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "./context/ThemeContext";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -8,21 +8,26 @@ import AdminDashboard from "./pages/AdminDashboard";
 import PartnerDashboard from "./pages/PartnerDashboard";
 import MesCommandes from "./pages/MesCommandes";
 import ChatLingua from "./pages/ChatLingua";
-import UrgenceAuth from "./pages/UrgenceAuth";
+import Vendeur from "./pages/Vendeur";
+import CGV from "./pages/CGV";
+import MentionsLegales from "./pages/MentionsLegales";
+import Confidentialite from "./pages/Confidentialite";
 
 export default function App() {
   return (
     <ThemeProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/urgence" element={<UrgenceAuth />} />
-        <Route path="/chat-lingua" element={<ChatLingua />} />
+        <Route path="/urgence" element={<ChatLingua />} />
+        <Route path="/chat-lingua" element={<Navigate to="/urgence" replace />} />
+        <Route path="/urgence-auth" element={<Navigate to="/urgence" replace />} />
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
           <Route path="/mes-commandes" element={<MesCommandes />} />
-          <Route path="/cgv" element={<div className="p-8 text-center text-white">CGV — Bientôt disponible</div>} />
-          <Route path="/mentions-legales" element={<div className="p-8 text-center text-white">Mentions légales — Bientôt disponible</div>} />
-          <Route path="/confidentialite" element={<div className="p-8 text-center text-white">Confidentialité — Bientôt disponible</div>} />
+          <Route path="/espace-vendeur" element={<Vendeur />} />
+          <Route path="/cgv" element={<CGV />} />
+          <Route path="/mentions-legales" element={<MentionsLegales />} />
+          <Route path="/confidentialite" element={<Confidentialite />} />
           <Route path="/admin" element={
             <ProtectedRoute allowedRoles={["admin"]}>
               <AdminDashboard />
