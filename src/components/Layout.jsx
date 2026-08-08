@@ -8,9 +8,9 @@ export default function Layout() {
   const isActive = (p) => location.pathname === p;
 
   const navItems = [
+    { to: "/", emoji: "🏠", label: "Accueil" },
+    { to: "/chat-lingua", emoji: "🤖", label: "MyLingua" },
     { to: "/mes-commandes", emoji: "📋", label: "Mes commandes" },
-    { to: "/login?tab=partner", emoji: "🏪", label: "Espace Vendeur" },
-    { to: "/login?tab=admin", emoji: "🛡️", label: "Admin" },
   ];
 
   return (
@@ -51,7 +51,7 @@ export default function Layout() {
 
                 {/* Espace pro */}
                 <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs">
-                  <Link to="/login?tab=partner" className="text-green-400 hover:underline">Espace Vendeur</Link>
+                  <Link to="/partner" className="text-green-400 hover:underline">Espace Vendeur</Link>
                   <Link to="/mes-commandes" className="text-blue-400 hover:underline">Mes commandes</Link>
                   <a href="https://wa.me/221778610660?text=Bonjour%20FlashMecano%2C%20je%20souhaite%20m'inscrire%20comme%20vendeur%20de%20pieces%20ou%20mecanicien%20partenaire."
                      target="_blank" rel="noopener noreferrer"
