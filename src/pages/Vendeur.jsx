@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Zap, ShieldCheck, Users, MessageCircle, LogOut, Plus, Phone, Lock } from "lucide-react";
+import { Zap, ShieldCheck, Users, LogOut, Plus, Phone, Lock } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { supabase } from "../lib/supabase";
 
@@ -18,6 +18,8 @@ const FALLBACK_CONTENT = {
 };
 
 const EMPTY_NEW_PIECE = { piece_name: "", brand: "", vehicle_model: "", price: "", image_url: "" };
+
+const NOUVEAU_VENDEUR_WHATSAPP = "https://wa.me/221789262218?text=Bonjour%20FlashMecano%2C%20je%20souhaite%20devenir%20vendeur.%0ANom%20%3A%20%0APr%C3%A9nom%20%3A%20%0ANom%20du%20garage%20%3A%20%0AT%C3%A9l%C3%A9phone%20%3A%20%0AVille%20%3A%20";
 
 function VendorDashboard({ vendor, onLogout, isDark, cardBg, mutedText, sectionTitle }) {
   const [products, setProducts] = useState([]);
@@ -191,7 +193,7 @@ export default function Vendeur() {
   const [tab, setTab] = useState("nouveau");
   const [vendor, setVendor] = useState(null);
   const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
+  const [pin, setPin] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
 
@@ -219,21 +221,21 @@ export default function Vendeur() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError("");
-    if (!phone.trim() || !password.trim()) {
-      setLoginError("Renseignez votre telephone et votre mot de passe.");
+    if (!phone.trim() || !pin.trim()) {
+      setLoginError("Renseignez votre telephone et votre code PIN.");
       return;
     }
     setLoginLoading(true);
     try {
-      const { data, error } = await supabase.from("vendors").select("*").eq("phone", phone.trim()).single();
+      const { data, error } = await supabase.from("vendors").select("*").eq("phone", phone.trim()).eq("pin", pin.trim()).single();
       if (error || !data) {
-        setLoginError("Numero non reconnu. Verifiez ou inscrivez-vous via WhatsApp.");
+        setLoginError("Telephone ou PIN incorrect. Demandez votre code sur WhatsApp.");
         return;
       }
       localStorage.setItem("flashmecano_vendor", JSON.stringify(data));
       setVendor(data);
     } catch {
-      setLoginError("Numero non reconnu. Verifiez ou inscrivez-vous via WhatsApp.");
+      setLoginError("Telephone ou PIN incorrect. Demandez votre code sur WhatsApp.");
     } finally {
       setLoginLoading(false);
     }
@@ -243,8 +245,12 @@ export default function Vendeur() {
     localStorage.removeItem("flashmecano_vendor");
     setVendor(null);
     setPhone("");
-    setPassword("");
+    setPin("");
   };
+
+  const codeRequestLink = `https://wa.me/221789262218?text=${encodeURIComponent(
+    `Bonjour FlashMecano, je demande mon code vendeur. Mon telephone : ${phone.trim()}`
+  )}`;
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -291,10 +297,9 @@ export default function Vendeur() {
             })}
           </div>
 
-          <a href={content.whatsappLink} target="_blank" rel="noopener noreferrer" className="block">
+          <a href={NOUVEAU_VENDEUR_WHATSAPP} target="_blank" rel="noopener noreferrer" className="block">
             <button className="w-full bg-green-600 hover:bg-green-500 text-white p-4 rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-all shadow-lg shadow-green-900/30">
-              <MessageCircle size={20} />
-              {content.cta}
+              📱 Rejoindre via WhatsApp
             </button>
           </a>
         </div>
@@ -317,13 +322,20 @@ export default function Vendeur() {
                 className={`w-full pl-9 pr-3 py-2.5 rounded-xl border text-sm outline-none ${isDark ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500" : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"}`}
               />
             </div>
+            <a href={codeRequestLink} target="_blank" rel="noopener noreferrer" className="block">
+              <button type="button" className="w-full bg-green-600 hover:bg-green-500 text-white p-2.5 rounded-xl font-semibold text-sm active:scale-95 transition-all">
+                📱 Recevoir mon code sur WhatsApp
+              </button>
+            </a>
             <div className="relative">
               <Lock size={16} className={`absolute left-3 top-3.5 ${mutedText}`} />
               <input
-                type="password"
-                placeholder="Mot de passe"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="Code recu sur WhatsApp"
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
                 className={`w-full pl-9 pr-3 py-2.5 rounded-xl border text-sm outline-none ${isDark ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500" : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"}`}
               />
             </div>

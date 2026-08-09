@@ -171,7 +171,7 @@ export default function ChatLingua() {
   const speak = useCallback((text) => {
     if (!audioEnabled || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new SpeechSynthesisUtterance(text.replace(/MyLingua/g, "My Lingua"));
     utterance.lang = "fr-FR";
     utterance.rate = 0.95;
     utterance.pitch = 1;
@@ -227,6 +227,12 @@ export default function ChatLingua() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, options, loading, contacts, rating]);
+
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis?.cancel();
+    };
+  }, []);
 
   const addBotMessage = (text) => {
     setMessages((p) => [...p, { role: "bot", text }]);

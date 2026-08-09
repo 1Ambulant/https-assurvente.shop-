@@ -22,7 +22,7 @@ const PIECE_IMAGES = {
 
 export function getPieceImage(pieceName, originalUrl) {
   if (originalUrl && originalUrl.startsWith('http')) return originalUrl;
-  const normalized = pieceName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const normalized = (pieceName || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   for (const [keyword, url] of Object.entries(PIECE_IMAGES)) {
     if (normalized.includes(keyword)) return url;
   }
