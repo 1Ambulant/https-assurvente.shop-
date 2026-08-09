@@ -1,37 +1,79 @@
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
-import { Wrench, MapPin, Star, Settings, MessageCircle, X, Search } from "lucide-react";
+import { Wrench, MapPin, Star, MessageCircle, X, Search } from "lucide-react";
 import { useState, useEffect } from "react";
+import { supabase } from "../lib/supabase";
+
+function formatPrice(n) {
+  if (n === null || n === undefined) return "";
+  return `${Number(n).toLocaleString("fr-FR")} FCFA`;
+}
+
+function formatReviewDate(dateStr) {
+  if (!dateStr) return "";
+  try {
+    return new Date(dateStr).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  } catch {
+    return "";
+  }
+}
 
 export default function Home() {
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const [pieces, setPieces] = useState([]);
   const [mecanos, setMecanos] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [selectedPiece, setSelectedPiece] = useState(null);
+  const [selectedMecano, setSelectedMecano] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchMode, setSearchMode] = useState("piece");
-  const [reviews, setReviews] = useState(null);
 
   useEffect(() => {
-    fetch("/content/avis.json")
-      .then((res) => res.json())
-      .then(setReviews)
-      .catch(console.error);
+    supabase
+      .from("products")
+      .select("*")
+      .eq("actif", true)
+      .order("created_at", { ascending: false })
+      .limit(8)
+      .then(({ data, error }) => {
+        if (error || !data) return;
+        setPieces(data);
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
-    setPieces([
-      { id: 1, nom: "Demarreur Peugeot 308", prix: 45000, description: "Demarreur reconditionne, teste et garanti. Compatible Peugeot 308 essence et diesel." },
-      { id: 2, nom: "Alternateur Toyota Corolla", prix: 38000, description: "Alternateur d'occasion controle, forte capacite de charge. Compatible Toyota Corolla." },
-      { id: 3, nom: "Embrayage Renault Clio 4", prix: 62000, description: "Kit d'embrayage complet (disque, mecanisme, butee) pour Renault Clio 4." },
-      { id: 4, nom: "Courroie Distribution", prix: 25000, description: "Kit courroie de distribution + galets, adaptable a la plupart des vehicules courants." },
-    ]);
-    setMecanos([
-      { id: 1, nom: "Amadou Garage", note: 4.8, distance: "2.3 km", specialite: "Moteur" },
-      { id: 2, nom: "MecaPro Dakar", note: 4.6, distance: "5.1 km", specialite: "Electricite" },
-      { id: 3, nom: "AutoFix Medina", note: 4.9, distance: "1.2 km", specialite: "Toutes marques" },
-    ]);
+    supabase
+      .from("mechanics")
+      .select("*")
+      .eq("actif", true)
+      .limit(6)
+      .then(({ data, error }) => {
+        if (error || !data) return;
+        setMecanos(data);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const loadReviews = async () => {
+      try {
+        const [{ data: reviewsData, error: reviewsErr }, { data: mechData }, { data: vendData }] = await Promise.all([
+          supabase.from("reviews").select("*").order("created_at", { ascending: false }).limit(3),
+          supabase.from("mechanics").select("id, name"),
+          supabase.from("vendors").select("id, name"),
+        ]);
+        if (reviewsErr || !reviewsData) return;
+        const nameById = new Map();
+        (mechData || []).forEach((m) => nameById.set(m.id, m.name));
+        (vendData || []).forEach((v) => nameById.set(v.id, v.name));
+        setReviews(reviewsData.map((r) => ({ ...r, reviewed_name: nameById.get(r.reviewed_id) || null })));
+      } catch {
+        // fallback silencieux
+      }
+    };
+    loadReviews();
   }, []);
 
   const cardBg = isDark ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200";
@@ -53,8 +95,8 @@ export default function Home() {
       {/* Hero */}
       <section className={`${isDark ? "bg-gradient-to-b from-blue-900 to-gray-950" : "bg-gradient-to-b from-blue-600 to-blue-800"} text-white px-4 pt-8 pb-10`}>
         <div className="text-center">
-          <h1 className="text-3xl font-bold mb-3">Votre mecano en 30 minutes</h1>
-          <p className="text-blue-100 mb-6 text-sm">Pieces d'occasion + Main d'oeuvre a domicile</p>
+          <h1 className="text-2xl font-bold mb-3">FlashMecano — Mecaniciens &amp; Pieces auto au Senegal</h1>
+          <p className="text-blue-100 mb-6 text-sm">Votre mecano en 30 minutes. Pieces d'occasion + Main d'oeuvre a domicile.</p>
           <div className="flex justify-center gap-2 mb-6">
             <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium">Rapide</span>
             <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium">Garanti</span>
@@ -68,6 +110,7 @@ export default function Home() {
 
       {/* Barre de recherche */}
       <section className="px-4 pt-4">
+        <h2 className="sr-only">Rechercher une piece ou un mecanicien</h2>
         <form onSubmit={handleSearch} className={`${cardBg} border rounded-2xl p-2 shadow-lg space-y-2`}>
           <div className="flex items-center gap-2 px-2">
             <Search size={16} className={mutedText} />
@@ -110,6 +153,7 @@ export default function Home() {
 
       {/* Inscription vendeur — Bien visible */}
       <section className="px-4 py-4">
+        <h2 className="sr-only">Devenir vendeur ou mecanicien partenaire</h2>
         <a href={whatsappInscriptionLink} target="_blank" rel="noopener noreferrer" className="block">
           <div className={`${isDark ? "bg-green-900/30 border-green-700" : "bg-green-50 border-green-200"} border rounded-2xl p-4 flex items-center gap-3 active:scale-[0.98] transition-all`}>
             <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center shrink-0">
@@ -125,66 +169,80 @@ export default function Home() {
       </section>
 
       {/* Pieces populaires */}
-      <section className="px-4 py-2">
-        <h2 className={`text-lg font-bold mb-4 ${sectionTitle}`}>Pieces populaires</h2>
-        <div className="grid grid-cols-2 gap-3">
-          {pieces.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => setSelectedPiece(p)}
-              className={`${cardBg} border rounded-2xl p-3 text-left cursor-pointer hover:border-orange-400 hover:shadow-md active:scale-[0.97] transition-all`}
-            >
-              <div className={`w-full h-24 ${isDark ? "bg-orange-950/40" : "bg-orange-50"} rounded-xl mb-2 flex items-center justify-center`}>
-                <Settings size={28} className="text-orange-500" />
-              </div>
-              <h3 className="font-semibold text-sm mb-1 leading-tight">{p.nom}</h3>
-              <p className="text-orange-500 font-bold text-sm">{p.prix.toLocaleString()} FCFA</p>
-            </button>
-          ))}
-        </div>
-      </section>
+      {pieces.length > 0 && (
+        <section className="px-4 py-2">
+          <h2 className={`text-lg font-bold mb-4 ${sectionTitle}`}>Pieces populaires</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {pieces.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setSelectedPiece(p)}
+                className={`${cardBg} border rounded-2xl p-3 text-left cursor-pointer hover:border-orange-400 hover:shadow-md active:scale-[0.97] transition-all relative`}
+              >
+                {p.discount > 0 && (
+                  <span className="absolute top-2 left-2 z-10 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                    -{p.discount}%
+                  </span>
+                )}
+                <div className={`w-full h-24 ${isDark ? "bg-orange-950/40" : "bg-orange-50"} rounded-xl mb-2 flex items-center justify-center overflow-hidden`}>
+                  {p.image_url ? (
+                    <img src={p.image_url} alt={p.piece_name} className="w-full h-full object-cover" />
+                  ) : (
+                    <Wrench size={28} className="text-orange-500" />
+                  )}
+                </div>
+                <h3 className="font-semibold text-sm mb-1 leading-tight">{p.piece_name}</h3>
+                <div className="flex items-center gap-2">
+                  <p className="text-orange-500 font-bold text-sm">{formatPrice(p.price)}</p>
+                  {p.discount > 0 && p.price_original && (
+                    <p className={`text-xs line-through ${mutedText}`}>{formatPrice(p.price_original)}</p>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Mecanos disponibles */}
-      <section className="px-4 py-4">
-        <h2 className={`text-lg font-bold mb-4 ${sectionTitle}`}>Mecanos disponibles</h2>
-        <div className="space-y-3">
-          {mecanos.map((m) => {
-            const mecanoReview = reviews?.mecanoReviews?.[m.nom];
-            return (
-              <div key={m.id} className={`${cardBg} border rounded-2xl p-4 flex items-center gap-3`}>
+      {mecanos.length > 0 && (
+        <section className="px-4 py-4">
+          <h2 className={`text-lg font-bold mb-4 ${sectionTitle}`}>Mecanos disponibles</h2>
+          <div className="space-y-3">
+            {mecanos.map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setSelectedMecano(m)}
+                className={`${cardBg} border rounded-2xl p-4 flex items-center gap-3 w-full text-left hover:border-blue-400 hover:shadow-md active:scale-[0.98] transition-all`}
+              >
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
                   <Wrench size={20} className="text-blue-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-sm truncate">{m.nom}</h3>
-                  <p className={`text-xs ${mutedText} mt-0.5`}>{m.specialite}</p>
-                  <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                    <Star size={12} className="text-yellow-400 fill-yellow-400" />
-                    <span>{m.note}</span>
-                    <span className="text-gray-300">|</span>
-                    <MapPin size={12} />
-                    <span>{m.distance}</span>
+                  <h3 className="font-semibold text-sm truncate">{m.name}</h3>
+                  <p className={`text-xs ${mutedText} mt-0.5`}>{m.specialty}</p>
+                  <div className="flex items-center gap-2 text-xs text-gray-500 mt-1 flex-wrap">
+                    {m.neighborhood && (
+                      <span className="flex items-center gap-1"><MapPin size={12} />{m.neighborhood}</span>
+                    )}
+                    {m.tarif_base != null && <span>{formatPrice(m.tarif_base)}/h</span>}
+                    {m.zone_km_max != null && <span>Zone : {m.zone_km_max} km</span>}
                   </div>
-                  {mecanoReview && (
-                    <p className={`text-xs mt-1 ${mutedText}`}>
-                      <span className="text-yellow-400">⭐</span> {mecanoReview.rating} ({mecanoReview.count} avis)
-                    </p>
-                  )}
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Avis clients */}
-      {reviews?.homeReviews?.length > 0 && (
+      {reviews.length > 0 && (
         <section className="px-4 py-4">
           <h2 className={`text-lg font-bold mb-4 ${sectionTitle}`}>Ils nous font confiance</h2>
-          <div className="flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-visible no-scrollbar">
-            {reviews.homeReviews.map((r, i) => (
+          <div className="flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:overflow-visible no-scrollbar">
+            {reviews.map((r) => (
               <div
-                key={i}
+                key={r.id}
                 className={`${cardBg} border rounded-2xl p-4 shrink-0 w-64 sm:w-auto shadow-sm`}
               >
                 <div className="flex gap-0.5 mb-2">
@@ -196,8 +254,8 @@ export default function Home() {
                     />
                   ))}
                 </div>
-                <p className={`text-sm italic leading-relaxed mb-3 ${isDark ? "text-gray-300" : "text-gray-700"}`}>"{r.text}"</p>
-                <p className="text-sm text-gray-500">{r.name} — {r.date}</p>
+                <p className={`text-sm italic leading-relaxed mb-3 ${isDark ? "text-gray-300" : "text-gray-700"}`}>"{r.comment}"</p>
+                <p className="text-sm text-gray-500">{r.reviewed_name || "FlashMecano"} — {formatReviewDate(r.created_at)}</p>
               </div>
             ))}
           </div>
@@ -215,25 +273,84 @@ export default function Home() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-3">
-              <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 ${isDark ? "bg-orange-950/40" : "bg-orange-50"}`}>
-                <Settings size={26} className="text-orange-500" />
+              <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${isDark ? "bg-orange-950/40" : "bg-orange-50"}`}>
+                {selectedPiece.image_url ? (
+                  <img src={selectedPiece.image_url} alt={selectedPiece.piece_name} className="w-full h-full object-cover" />
+                ) : (
+                  <Wrench size={26} className="text-orange-500" />
+                )}
               </div>
               <button onClick={() => setSelectedPiece(null)} className={`p-2 rounded-full ${isDark ? "text-gray-400 hover:bg-gray-800" : "text-gray-500 hover:bg-gray-100"}`}>
                 <X size={20} />
               </button>
             </div>
-            <h3 className={`text-lg font-bold mb-1 ${sectionTitle}`}>{selectedPiece.nom}</h3>
-            <p className="text-orange-500 font-bold text-xl mb-3">{selectedPiece.prix.toLocaleString()} FCFA</p>
-            <p className={`text-sm leading-relaxed mb-5 ${mutedText}`}>{selectedPiece.description}</p>
+            <h3 className={`text-lg font-bold mb-1 ${sectionTitle}`}>{selectedPiece.piece_name}</h3>
+            {(selectedPiece.brand || selectedPiece.vehicle_model) && (
+              <p className={`text-xs mb-1 ${mutedText}`}>{[selectedPiece.brand, selectedPiece.vehicle_model].filter(Boolean).join(" — ")}</p>
+            )}
+            {selectedPiece.ref_oem && (
+              <p className={`text-xs mb-2 ${mutedText}`}>Ref. OEM : {selectedPiece.ref_oem}</p>
+            )}
+            <div className="flex items-center gap-2 mb-3">
+              <p className="text-orange-500 font-bold text-xl">{formatPrice(selectedPiece.price)}</p>
+              {selectedPiece.discount > 0 && selectedPiece.price_original && (
+                <p className={`text-sm line-through ${mutedText}`}>{formatPrice(selectedPiece.price_original)}</p>
+              )}
+              {selectedPiece.discount > 0 && (
+                <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">-{selectedPiece.discount}%</span>
+              )}
+            </div>
+            {selectedPiece.vendor_name && (
+              <p className={`text-xs leading-relaxed mb-5 ${mutedText}`}>Vendu par {selectedPiece.vendor_name}</p>
+            )}
             <button
               onClick={() => {
                 const piece = selectedPiece;
                 setSelectedPiece(null);
-                navigate("/urgence", { state: { mode: "piece", query: piece.nom } });
+                navigate("/urgence", { state: { mode: "piece", query: piece.piece_name } });
               }}
               className="w-full bg-orange-500 hover:bg-orange-400 text-white p-3.5 rounded-2xl font-bold active:scale-95 transition-all"
             >
-              Commander maintenant — {selectedPiece.prix.toLocaleString()} FCFA
+              Commander maintenant — {formatPrice(selectedPiece.price)}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal detail mecano */}
+      {selectedMecano && (
+        <div
+          className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center"
+          onClick={() => setSelectedMecano(null)}
+        >
+          <div
+            className={`w-full max-w-md ${isDark ? "bg-gray-900" : "bg-white"} rounded-t-3xl p-5 pb-8`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div className="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
+                <Wrench size={26} className="text-blue-600" />
+              </div>
+              <button onClick={() => setSelectedMecano(null)} className={`p-2 rounded-full ${isDark ? "text-gray-400 hover:bg-gray-800" : "text-gray-500 hover:bg-gray-100"}`}>
+                <X size={20} />
+              </button>
+            </div>
+            <h3 className={`text-lg font-bold mb-1 ${sectionTitle}`}>{selectedMecano.name}</h3>
+            <p className={`text-xs mb-3 ${mutedText}`}>{selectedMecano.specialty}</p>
+            <div className={`text-sm space-y-1 mb-5 ${mutedText}`}>
+              {selectedMecano.neighborhood && <p className="flex items-center gap-1"><MapPin size={12} />{selectedMecano.neighborhood}</p>}
+              {selectedMecano.tarif_base != null && <p>Tarif de base : {formatPrice(selectedMecano.tarif_base)}/h</p>}
+              {selectedMecano.zone_km_max != null && <p>Zone d'intervention : {selectedMecano.zone_km_max} km</p>}
+            </div>
+            <button
+              onClick={() => {
+                const mecano = selectedMecano;
+                setSelectedMecano(null);
+                navigate("/urgence", { state: { mode: "mecano", query: mecano.name } });
+              }}
+              className="w-full bg-blue-600 hover:bg-blue-500 text-white p-3.5 rounded-2xl font-bold active:scale-95 transition-all"
+            >
+              Demander ce mecanicien via MyLingua
             </button>
           </div>
         </div>
