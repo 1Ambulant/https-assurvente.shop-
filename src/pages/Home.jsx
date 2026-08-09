@@ -11,6 +11,14 @@ export default function Home() {
   const [selectedPiece, setSelectedPiece] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchMode, setSearchMode] = useState("piece");
+  const [reviews, setReviews] = useState(null);
+
+  useEffect(() => {
+    fetch("/content/avis.json")
+      .then((res) => res.json())
+      .then(setReviews)
+      .catch(console.error);
+  }, []);
 
   useEffect(() => {
     setPieces([
@@ -140,26 +148,61 @@ export default function Home() {
       <section className="px-4 py-4">
         <h2 className={`text-lg font-bold mb-4 ${sectionTitle}`}>Mecanos disponibles</h2>
         <div className="space-y-3">
-          {mecanos.map((m) => (
-            <div key={m.id} className={`${cardBg} border rounded-2xl p-4 flex items-center gap-3`}>
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
-                <Wrench size={20} className="text-blue-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-sm truncate">{m.nom}</h3>
-                <p className={`text-xs ${mutedText} mt-0.5`}>{m.specialite}</p>
-                <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                  <Star size={12} className="text-yellow-400 fill-yellow-400" />
-                  <span>{m.note}</span>
-                  <span className="text-gray-300">|</span>
-                  <MapPin size={12} />
-                  <span>{m.distance}</span>
+          {mecanos.map((m) => {
+            const mecanoReview = reviews?.mecanoReviews?.[m.nom];
+            return (
+              <div key={m.id} className={`${cardBg} border rounded-2xl p-4 flex items-center gap-3`}>
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
+                  <Wrench size={20} className="text-blue-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-sm truncate">{m.nom}</h3>
+                  <p className={`text-xs ${mutedText} mt-0.5`}>{m.specialite}</p>
+                  <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                    <Star size={12} className="text-yellow-400 fill-yellow-400" />
+                    <span>{m.note}</span>
+                    <span className="text-gray-300">|</span>
+                    <MapPin size={12} />
+                    <span>{m.distance}</span>
+                  </div>
+                  {mecanoReview && (
+                    <p className={`text-xs mt-1 ${mutedText}`}>
+                      <span className="text-yellow-400">⭐</span> {mecanoReview.rating} ({mecanoReview.count} avis)
+                    </p>
+                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
+
+      {/* Avis clients */}
+      {reviews?.homeReviews?.length > 0 && (
+        <section className="px-4 py-4">
+          <h2 className={`text-lg font-bold mb-4 ${sectionTitle}`}>Ils nous font confiance</h2>
+          <div className="flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-visible no-scrollbar">
+            {reviews.homeReviews.map((r, i) => (
+              <div
+                key={i}
+                className={`${cardBg} border rounded-2xl p-4 shrink-0 w-64 sm:w-auto shadow-sm`}
+              >
+                <div className="flex gap-0.5 mb-2">
+                  {Array.from({ length: 5 }).map((_, idx) => (
+                    <Star
+                      key={idx}
+                      size={14}
+                      className={idx < r.rating ? "text-yellow-400 fill-yellow-400" : isDark ? "text-gray-700" : "text-gray-200"}
+                    />
+                  ))}
+                </div>
+                <p className={`text-sm italic leading-relaxed mb-3 ${isDark ? "text-gray-300" : "text-gray-700"}`}>"{r.text}"</p>
+                <p className="text-sm text-gray-500">{r.name} — {r.date}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Modal detail piece */}
       {selectedPiece && (

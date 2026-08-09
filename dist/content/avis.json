@@ -1,0 +1,39 @@
+{
+  "homeReviews": [
+    {
+      "name": "Amadou K.",
+      "rating": 5,
+      "text": "FlashMecano a trouve mon probleme de demarreur en 2 minutes. Le mecano etait chez moi en 20 min. Impressionnant !",
+      "date": "15 juillet 2026"
+    },
+    {
+      "name": "Fatou D.",
+      "rating": 5,
+      "text": "J'ai commande un alternateur via FlashMecano. Livraison en 45 min, piece d'origine et prix correct. Je recommande.",
+      "date": "3 aout 2026"
+    },
+    {
+      "name": "Ibrahima S.",
+      "rating": 4,
+      "text": "Service rapide et professionnel. FlashMecano m'a evite de passer la journee dans un garage. Merci !",
+      "date": "28 juillet 2026"
+    },
+    {
+      "name": "Mariama N.",
+      "rating": 5,
+      "text": "Mon vehicule s'est arrete en pleine route. Grace a FlashMecano, un mecano qualifie est arrive en 30 minutes. Sauvetage !",
+      "date": "10 aout 2026"
+    }
+  ],
+  "mecanoReviews": {
+    "Amadou Garage": { "rating": 4.8, "count": 127, "reviews": [
+      {"name":"Omar T.", "rating":5, "text":"Amadou Garage est intervenu chez moi en 15 min. Propre et efficace.", "date":"2 aout 2026"}
+    ]},
+    "MecaPro Dakar": { "rating": 4.6, "count": 89, "reviews": [
+      {"name":"Aicha B.", "rating":5, "text":"Electricite auto resolue du premier coup. FlashMecano m'a mis en relation avec le bon expert.", "date":"5 aout 2026"}
+    ]},
+    "AutoFix Medina": { "rating": 4.9, "count": 215, "reviews": [
+      {"name":"Pape D.", "rating":5, "text":"AutoFix Medina est un partenaire FlashMecano de confiance. Travail soigne.", "date":"1 aout 2026"}
+    ]}
+  }
+}
