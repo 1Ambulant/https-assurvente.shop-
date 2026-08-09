@@ -19,6 +19,7 @@ const STEPS = {
   INTERVENTION_STARTED: "intervention_started",
   RATING: "rating",
   CLOSED: "closed",
+  NO_RESULTS: "no_results",
 };
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
@@ -245,6 +246,27 @@ export default function ChatLingua() {
     return d2.options || [];
   };
 
+  const handleNoResults = (type) => {
+    const label = type === "piece" ? "piece" : "mecano";
+    addBotMessage(`Je n'ai pas trouve de ${label} disponible dans votre zone immediate. Notre equipe recherche activement au-dela de votre perimetre. Vous serez contacte sous 15 min au +221 78 926 22 18.`);
+    setStep(STEPS.NO_RESULTS);
+  };
+
+  const handleRetry = () => {
+    setForm({});
+    setOptions([]);
+    setMecanoOptions([]);
+    setSelectedMecano(null);
+    setSelectedOption(null);
+    if (mode === "diagnostic") {
+      setStep(STEPS.ASK_SYMPTOMS);
+      addBotMessage("Pas de souci, recommencons. Decrivez-moi a nouveau votre panne.");
+    } else {
+      setStep(STEPS.ASK_BRAND);
+      addBotMessage("Pas de souci, recommencons. Quelle est la marque et le modele de votre vehicule ?");
+    }
+  };
+
   const handleSendWithText = async (textOverride) => {
     const userText = textOverride || input.trim();
     if (!userText || loading) return;
@@ -328,20 +350,24 @@ export default function ChatLingua() {
           } else {
             addBotMessage("Merci. Je recherche les meilleures options pour vous...");
             setStep(STEPS.SEARCHING);
-            const opts = await searchOptions(fullForm);
-            setOptions(opts);
-            if (opts.length === 0) {
-              addBotMessage("Je n'ai pas trouve d'option disponible dans votre zone pour cette recherche. Notre equipe vous recontacte sous 2h.");
-              setStep("idle");
-            } else if (mode === "mecano") {
-              const mecanosMap = new Map();
-              opts.forEach((o) => { if (!mecanosMap.has(o.mecano_nom)) mecanosMap.set(o.mecano_nom, o); });
-              setMecanoOptions(Array.from(mecanosMap.values()));
-              addBotMessage("Voici les mecaniciens disponibles dans votre zone. Choisissez celui qui vous convient :\n(Tapez la lettre correspondante)");
-              setStep(STEPS.CHOOSE_MECANO);
-            } else {
-              addBotMessage(`Voici les options disponibles${initialQuery ? ` pour "${initialQuery}"` : ""}. Quelle piece choisissez-vous ?\n(Tapez la lettre correspondante)`);
-              setStep(STEPS.CHOOSE_PIECE);
+            try {
+              const opts = await searchOptions(fullForm);
+              setOptions(opts);
+              if (opts.length === 0) {
+                handleNoResults(mode === "piece" ? "piece" : "mecano");
+              } else if (mode === "mecano") {
+                const mecanosMap = new Map();
+                opts.forEach((o) => { if (!mecanosMap.has(o.mecano_nom)) mecanosMap.set(o.mecano_nom, o); });
+                setMecanoOptions(Array.from(mecanosMap.values()));
+                addBotMessage("Voici les mecaniciens disponibles dans votre zone. Choisissez celui qui vous convient :\n(Tapez la lettre correspondante)");
+                setStep(STEPS.CHOOSE_MECANO);
+              } else {
+                addBotMessage(`Voici les options disponibles${initialQuery ? ` pour "${initialQuery}"` : ""}. Quelle piece choisissez-vous ?\n(Tapez la lettre correspondante)`);
+                setStep(STEPS.CHOOSE_PIECE);
+              }
+            } catch (searchErr) {
+              console.error("[ChatLingua] search", searchErr);
+              handleNoResults(mode === "piece" ? "piece" : "mecano");
             }
           }
           break;
@@ -371,23 +397,27 @@ export default function ChatLingua() {
           setStep(STEPS.SEARCHING);
 
           const fullForm = { ...form, telephone_client: form.telephone_client, latitude_client: 14.7167, longitude_client: -17.4677, adresse_client: "Dakar, Senegal" };
-          const opts = await searchOptions(fullForm);
-          setOptions(opts);
+          try {
+            const opts = await searchOptions(fullForm);
+            setOptions(opts);
 
-          if (opts.length > 0) {
-            const mecanosMap = new Map();
-            opts.forEach(o => {
-              if (!mecanosMap.has(o.mecano_nom)) {
-                mecanosMap.set(o.mecano_nom, o);
-              }
-            });
-            const mecanos = Array.from(mecanosMap.values());
-            setMecanoOptions(mecanos);
-            addBotMessage("Voici les mecaniciens disponibles dans votre zone. Choisissez celui qui vous convient :\n(Tapez la lettre correspondante)");
-            setStep(STEPS.CHOOSE_MECANO);
-          } else {
-            addBotMessage("Je n'ai pas trouve de mecanicien disponible pour ce modele dans votre zone. Notre equipe vous recontacte sous 2h.");
-            setStep("idle");
+            if (opts.length > 0) {
+              const mecanosMap = new Map();
+              opts.forEach(o => {
+                if (!mecanosMap.has(o.mecano_nom)) {
+                  mecanosMap.set(o.mecano_nom, o);
+                }
+              });
+              const mecanos = Array.from(mecanosMap.values());
+              setMecanoOptions(mecanos);
+              addBotMessage("Voici les mecaniciens disponibles dans votre zone. Choisissez celui qui vous convient :\n(Tapez la lettre correspondante)");
+              setStep(STEPS.CHOOSE_MECANO);
+            } else {
+              handleNoResults("mecano");
+            }
+          } catch (searchErr) {
+            console.error("[ChatLingua] search", searchErr);
+            handleNoResults("mecano");
           }
           break;
         }
@@ -738,6 +768,24 @@ export default function ChatLingua() {
           </div>
         )}
 
+        {/* Aucun resultat */}
+        {step === STEPS.NO_RESULTS && (
+          <div className="flex flex-col items-center mt-4 space-y-2 w-full">
+            <a href="https://wa.me/221789262218" target="_blank" rel="noopener noreferrer" className="w-full">
+              <button className="w-full bg-green-600 hover:bg-green-500 text-white p-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all">
+                📱 Contacter FlashMecano sur WhatsApp
+              </button>
+            </a>
+            <button
+              onClick={handleRetry}
+              disabled={loading}
+              className={`w-full p-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50 ${isDark ? "bg-gray-800 text-gray-200 hover:bg-gray-700" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+            >
+              🔄 Reessayer avec d'autres criteres
+            </button>
+          </div>
+        )}
+
         {/* Loading */}
         {loading && (
           <div className="flex justify-start">
@@ -754,8 +802,8 @@ export default function ChatLingua() {
       <div className={`p-3 pb-safe border-t shrink-0 ${inputBarBg}`}>
         <div className={`flex items-center gap-2 rounded-full px-4 py-2 ${inputPillBg}`}>
           <button onClick={isListening ? stopListening : startListening} className={`p-2 rounded-full transition-colors shrink-0 ${isListening ? "bg-red-500 text-white animate-pulse" : inputIconIdle}`}><Mic size={18} /></button>
-          <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholderText} className={`flex-1 bg-transparent text-sm outline-none ${inputText}`} disabled={loading || step === STEPS.SEARCHING || step === STEPS.PAYMENT || step === STEPS.SHOW_CONTACTS || step === STEPS.INTERVENTION_STARTED || step === STEPS.RATING || step === STEPS.CLOSED} />
-          <button onClick={handleSend} disabled={loading || !input.trim() || step === STEPS.SHOW_CONTACTS || step === STEPS.INTERVENTION_STARTED || step === STEPS.RATING || step === STEPS.CLOSED} className="p-2 text-blue-500 hover:text-blue-400 disabled:opacity-30 transition-colors shrink-0"><Send size={18} /></button>
+          <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholderText} className={`flex-1 bg-transparent text-sm outline-none ${inputText}`} disabled={loading || step === STEPS.SEARCHING || step === STEPS.PAYMENT || step === STEPS.SHOW_CONTACTS || step === STEPS.INTERVENTION_STARTED || step === STEPS.RATING || step === STEPS.CLOSED || step === STEPS.NO_RESULTS} />
+          <button onClick={handleSend} disabled={loading || !input.trim() || step === STEPS.SHOW_CONTACTS || step === STEPS.INTERVENTION_STARTED || step === STEPS.RATING || step === STEPS.CLOSED || step === STEPS.NO_RESULTS} className="p-2 text-blue-500 hover:text-blue-400 disabled:opacity-30 transition-colors shrink-0"><Send size={18} /></button>
         </div>
         {isListening && <p className="text-center text-xs text-red-400 mt-1 animate-pulse">Ecoute en cours... parlez</p>}
       </div>

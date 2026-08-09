@@ -21,7 +21,7 @@ export default function CGV() {
     },
     {
       titre: "4. Garanties",
-      texte: "Les pieces vendues via FlashMecano beneficient d'une garantie de 3 a 6 mois selon le type de piece, couvrant les defauts de fonctionnement. La garantie ne couvre pas une mauvaise installation par un tiers non valide par FlashMecano.",
+      texte: "Chaque piece beneficie de la garantie commerciale de son vendeur partenaire (generalement 3 a 6 mois selon le type de piece et la politique du vendeur). FlashMecano s'assure que chaque vendeur respecte ses obligations de garantie. Les defauts lies a une installation non realisee par un mecanicien FlashMecano agree ne sont pas couverts.",
     },
     {
       titre: "5. Paiement securise",

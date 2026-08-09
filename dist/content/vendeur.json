@@ -1,0 +1,11 @@
+{
+  "title": "Devenez vendeur partenaire FlashMecano",
+  "subtitle": "Vendez vos pieces ou vos services de mecanique a des clients verifies, partout.",
+  "cta": "Rejoindre via WhatsApp",
+  "whatsappLink": "https://wa.me/221789262218?text=Bonjour%20FlashMecano%2C%20je%20souhaite%20devenir%20vendeur%20partenaire",
+  "advantages": [
+    { "title": "Visibilite instantanee", "desc": "Vos pieces et services sont proposes directement aux clients FlashMecano des votre inscription." },
+    { "title": "Paiement securise sous 48h", "desc": "Chaque commande est payee via sequestre FlashMecano. Vous etes payes des la livraison confirmee." },
+    { "title": "Clientele verifiee", "desc": "Accedez a une clientele qualifiee et verifiee, partout au Senegal et bientot au-dela." }
+  ]
+}

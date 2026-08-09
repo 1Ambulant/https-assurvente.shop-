@@ -25,7 +25,7 @@ export default function Confidentialite() {
     },
     {
       titre: "Cookies",
-      texte: "FlashMecano n'utilise que des cookies techniques necessaires au bon fonctionnement du site (par exemple la memorisation du mode jour/nuit). Aucun cookie publicitaire ou de tracking tiers n'est utilise.",
+      texte: "FlashMecano utilise actuellement uniquement des cookies techniques necessaires au fonctionnement du site (preferences utilisateur, mode jour/nuit). A l'avenir, des cookies de mesure d'audience ou de personnalisation publicitaire pourront etre utilises dans le respect de votre consentement prealable et de la reglementation en vigueur.",
     },
   ];
 
