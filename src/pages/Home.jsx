@@ -3,6 +3,43 @@ import { useTheme } from "../context/ThemeContext";
 import { Wrench, MapPin, Star, MessageCircle, X, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
+import { getPieceImage } from "../lib/pieceImages";
+
+function PieceImage({ src, alt, iconSize = 28 }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) {
+    return <Wrench size={iconSize} className="text-orange-500" />;
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="w-full h-full object-cover"
+      loading="lazy"
+      crossOrigin="anonymous"
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+function MecanoPhoto({ src, alt }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) {
+    return <Wrench size={20} className="text-blue-600" />;
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="w-full h-full object-cover"
+      loading="lazy"
+      crossOrigin="anonymous"
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 function formatPrice(n) {
   if (n === null || n === undefined) return "";
@@ -184,12 +221,8 @@ export default function Home() {
                     -{p.discount}%
                   </span>
                 )}
-                <div className={`w-full h-24 ${isDark ? "bg-orange-950/40" : "bg-orange-50"} rounded-xl mb-2 flex items-center justify-center overflow-hidden`}>
-                  {p.image_url ? (
-                    <img src={p.image_url} alt={p.piece_name} className="w-full h-full object-cover" />
-                  ) : (
-                    <Wrench size={28} className="text-orange-500" />
-                  )}
+                <div className="w-full h-24 rounded-xl mb-2 flex items-center justify-center overflow-hidden bg-orange-50 dark:bg-orange-950/40">
+                  <PieceImage src={getPieceImage(p.piece_name, p.image_url)} alt={p.piece_name} iconSize={28} />
                 </div>
                 <h3 className="font-semibold text-sm mb-1 leading-tight">{p.piece_name}</h3>
                 <div className="flex items-center gap-2">
@@ -215,8 +248,8 @@ export default function Home() {
                 onClick={() => setSelectedMecano(m)}
                 className={`${cardBg} border rounded-2xl p-4 flex items-center gap-3 w-full text-left hover:border-blue-400 hover:shadow-md active:scale-[0.98] transition-all`}
               >
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
-                  <Wrench size={20} className="text-blue-600" />
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center shrink-0 overflow-hidden">
+                  <MecanoPhoto src={m.photo_url} alt={m.name} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-sm truncate">{m.name}</h3>
@@ -273,12 +306,8 @@ export default function Home() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-3">
-              <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${isDark ? "bg-orange-950/40" : "bg-orange-50"}`}>
-                {selectedPiece.image_url ? (
-                  <img src={selectedPiece.image_url} alt={selectedPiece.piece_name} className="w-full h-full object-cover" />
-                ) : (
-                  <Wrench size={26} className="text-orange-500" />
-                )}
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-orange-50 dark:bg-orange-950/40">
+                <PieceImage src={getPieceImage(selectedPiece.piece_name, selectedPiece.image_url)} alt={selectedPiece.piece_name} iconSize={26} />
               </div>
               <button onClick={() => setSelectedPiece(null)} className={`p-2 rounded-full ${isDark ? "text-gray-400 hover:bg-gray-800" : "text-gray-500 hover:bg-gray-100"}`}>
                 <X size={20} />
@@ -328,8 +357,8 @@ export default function Home() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-3">
-              <div className="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
-                <Wrench size={26} className="text-blue-600" />
+              <div className="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center shrink-0 overflow-hidden">
+                <MecanoPhoto src={selectedMecano.photo_url} alt={selectedMecano.name} />
               </div>
               <button onClick={() => setSelectedMecano(null)} className={`p-2 rounded-full ${isDark ? "text-gray-400 hover:bg-gray-800" : "text-gray-500 hover:bg-gray-100"}`}>
                 <X size={20} />

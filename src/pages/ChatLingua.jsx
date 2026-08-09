@@ -611,7 +611,7 @@ export default function ChatLingua() {
   const chipHover = isDark ? "hover:bg-gray-700" : "hover:bg-gray-200";
 
   return (
-    <div className={`h-screen flex flex-col ${pageBg}`}>
+    <div className={`h-[100dvh] flex flex-col ${pageBg}`}>
       {/* Header */}
       <header className={`flex items-center gap-3 px-4 py-3 border-b shrink-0 ${headerBg}`}>
         <button onClick={() => navigate(-1)} className={`p-2 -ml-2 rounded-full transition-colors ${headerHover}`}><ArrowLeft size={20} /></button>
@@ -629,7 +629,7 @@ export default function ChatLingua() {
       </header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 pb-24 space-y-4">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
             <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-line ${m.role === "user" ? "bg-blue-600 text-white rounded-br-md" : `${botBubble} rounded-bl-md`}`}>{m.text}</div>
@@ -799,7 +799,10 @@ export default function ChatLingua() {
       </div>
 
       {/* Input */}
-      <div className={`p-3 pb-safe border-t shrink-0 ${inputBarBg}`}>
+      <div
+        className={`fixed bottom-0 left-0 right-0 z-50 p-3 border-t shrink-0 ${inputBarBg}`}
+        style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+      >
         <div className={`flex items-center gap-2 rounded-full px-4 py-2 ${inputPillBg}`}>
           <button onClick={isListening ? stopListening : startListening} className={`p-2 rounded-full transition-colors shrink-0 ${isListening ? "bg-red-500 text-white animate-pulse" : inputIconIdle}`}><Mic size={18} /></button>
           <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholderText} className={`flex-1 bg-transparent text-sm outline-none ${inputText}`} disabled={loading || step === STEPS.SEARCHING || step === STEPS.PAYMENT || step === STEPS.SHOW_CONTACTS || step === STEPS.INTERVENTION_STARTED || step === STEPS.RATING || step === STEPS.CLOSED || step === STEPS.NO_RESULTS} />
