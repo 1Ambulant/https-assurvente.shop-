@@ -30,8 +30,47 @@ export default function Layout() {
               <Outlet />
             </div>
 
-            <footer className="bg-gray-950 text-gray-400 text-center text-sm py-6 mt-auto -mx-4">
-              FlashMecano © 2026 — +221 78 926 22 18 — Dakar, Sénégal
+            <footer className="bg-gray-950 text-gray-400 -mx-4 px-4 mt-auto py-8 border-t border-gray-800">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-xs">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-orange-500 text-lg">⚡</span>
+                    <span className="font-bold text-white">FlashMecano</span>
+                  </div>
+                  <p className="text-gray-500">Mecaniciens &amp; Pieces auto au Senegal</p>
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold mb-2">Navigation</h3>
+                  <ul className="space-y-1.5">
+                    <li><Link to="/" className="hover:text-white transition-colors">Accueil</Link></li>
+                    <li><Link to="/urgence" className="hover:text-white transition-colors">Urgence</Link></li>
+                    <li><Link to="/mes-commandes" className="hover:text-white transition-colors">Mes commandes</Link></li>
+                    <li><Link to="/espace-vendeur" className="hover:text-white transition-colors">Espace Vendeur</Link></li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold mb-2">Legal</h3>
+                  <ul className="space-y-1.5">
+                    <li><Link to="/cgv" className="hover:text-white transition-colors">CGV</Link></li>
+                    <li><Link to="/mentions-legales" className="hover:text-white transition-colors">Mentions legales</Link></li>
+                    <li><Link to="/confidentialite" className="hover:text-white transition-colors">Confidentialite</Link></li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold mb-2">Contact</h3>
+                  <a
+                    href="https://wa.me/221789262218"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-white transition-colors"
+                  >
+                    WhatsApp<br />+221 78 926 22 18
+                  </a>
+                </div>
+              </div>
+              <div className="text-center text-[10px] text-gray-600 mt-6 pt-4 border-t border-gray-800">
+                FlashMecano © 2026 — Dakar, Sénégal
+              </div>
             </footer>
           </div>
         </main>
