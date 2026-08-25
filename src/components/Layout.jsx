@@ -1,6 +1,7 @@
 import { Outlet, Link } from "react-router-dom";
 import { Sun, Moon } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
+import { PUBLIC_SUPPORT_PHONE, PUBLIC_SUPPORT_PHONE_DISPLAY } from "../lib/constants";
 
 export default function Layout() {
   const { isDark, toggleTheme } = useTheme();
@@ -59,12 +60,12 @@ export default function Layout() {
                 <div>
                   <h3 className="text-white font-semibold mb-2">Contact</h3>
                   <a
-                    href="https://wa.me/221789262218"
+                    href={`https://wa.me/${PUBLIC_SUPPORT_PHONE}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:text-white transition-colors"
                   >
-                    WhatsApp<br />+221 78 926 22 18
+                    WhatsApp<br />{PUBLIC_SUPPORT_PHONE_DISPLAY}
                   </a>
                 </div>
               </div>

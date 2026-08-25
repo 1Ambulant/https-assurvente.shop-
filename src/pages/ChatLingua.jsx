@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, ArrowLeft, Wrench, MapPin, Package, CheckCircle2, Mic, Volume2, VolumeX, Phone, MessageCircle, Truck, ClipboardCheck, Star, Navigation, MapPinned, User } from "lucide-react";
+import { Send, ArrowLeft, Wrench, MapPin, Package, CheckCircle2, Mic, Volume2, VolumeX, User } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
+import api from "../lib/api";
 
 const STEPS = {
   ASK_SYMPTOMS: "ask_symptoms",
@@ -126,16 +127,6 @@ function getDiagnostic(symptomes, answers) {
   return `${raisonnement}Diagnostic probable a ${confidence}% : ${conclusion}`;
 }
 
-function formatWhatsAppLink(phone, message) {
-  const clean = phone.replace(/\D/g, "").replace(/^0/, "221");
-  const encoded = encodeURIComponent(message);
-  return `https://wa.me/${clean}?text=${encoded}`;
-}
-
-function formatMapsLink(lat, lng, label) {
-  return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}&query_place_id=${encodeURIComponent(label)}`;
-}
-
 export default function ChatLingua() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -160,13 +151,19 @@ export default function ChatLingua() {
   const [isListening, setIsListening] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [contacts, setContacts] = useState(null);
-  const [rating, setRating] = useState(0);
   const [selectedMecano, setSelectedMecano] = useState(null);
   const [mecanoOptions, setMecanoOptions] = useState([]);
   const [selectedOption, setSelectedOption] = useState(null);
+  // P9 : contrat reel = paydunia_url (jamais url_paiement/payment_url).
+  // Stocke uniquement ce que /payment/initiate renvoie reellement.
+  const [paymentInfo, setPaymentInfo] = useState(null);
   const bottomRef = useRef(null);
   const recognitionRef = useRef(null);
   const greetedRef = useRef(false);
+  // Bloc B (P9 -> confirmation reelle) : IDs de timers en useRef, jamais en
+  // state, pour eviter tout re-render inutile et permettre un cleanup fiable.
+  const pollIntervalRef = useRef(null);
+  const pollTimeoutRef = useRef(null);
 
   const speak = useCallback((text) => {
     if (!audioEnabled || !window.speechSynthesis) return;
@@ -226,11 +223,19 @@ export default function ChatLingua() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, options, loading, contacts, rating]);
+  }, [messages, options, loading, contacts]);
 
   useEffect(() => {
     return () => {
       window.speechSynthesis?.cancel();
+    };
+  }, []);
+
+  // Bloc B : cleanup dedie au polling de paiement, separe du useEffect
+  // speechSynthesis ci-dessus pour ne pas melanger les responsabilites.
+  useEffect(() => {
+    return () => {
+      stopPaymentPolling();
     };
   }, []);
 
@@ -240,16 +245,77 @@ export default function ChatLingua() {
   };
   const addUserMessage = (text) => setMessages((p) => [...p, { role: "user", text }]);
 
-  const searchOptions = async (fullForm) => {
-    const r1 = await fetch(`${API_BASE}/api/intervention/creer`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(fullForm) });
-    if (!r1.ok) throw new Error("creer " + (await r1.text()));
-    const d1 = await r1.json();
-    setInterventionId(d1.intervention_id);
+  // P5 (mission_intake.py) : intention n'a que 2 valeurs cote backend reel
+  // ("panne" ou "piece") -- mode="mecano" est mappe sur "panne" (need_type
+  // "breakdown"), seule valeur qui declenche la recherche mecanicien cote
+  // mission_offers.py. Mapping confirme par le contrat P5, pas invente.
+  const buildIntakeBody = (fullForm) => {
+    const intention = mode === "piece" ? "piece" : "panne";
+    let piece_recherchee = null;
+    if (mode === "piece" && typeof fullForm.symptomes === "string") {
+      const match = fullForm.symptomes.match(/^Recherche piece:\s*(.+)$/i);
+      if (match) piece_recherchee = match[1].trim();
+    }
+    return {
+      telephone_client: fullForm.telephone_client,
+      intention,
+      marque: fullForm.marque || null,
+      modele: fullForm.modele || null,
+      annee: fullForm.annee || null,
+      symptomes: fullForm.symptomes || null,
+      piece_recherchee,
+      latitude_client: fullForm.latitude_client ?? null,
+      longitude_client: fullForm.longitude_client ?? null,
+      adresse_client: fullForm.adresse_client || null,
+      photo_url: null,
+    };
+  };
 
-    const r2 = await fetch(`${API_BASE}/api/intervention/${d1.intervention_id}/chercher-options`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
-    if (!r2.ok) throw new Error("options " + (await r2.text()));
+  // P6 (mission_offers.py) : la reponse reelle separe les offres par
+  // categorie ("parts" ou "mechanics"), jamais les deux a la fois pour une
+  // seule intention -- adapte ici vers la forme "options" plate deja
+  // consommee par l'UI existante (CHOOSE_MECANO / CHOOSE_PIECE), sans
+  // inventer de prix transport ni de total combine qui n'existent plus
+  // cote backend reel.
+  const adaptOffersResponse = (offersData) => {
+    const labels = "ABCDEFGHIJ";
+    let labelIdx = 0;
+    const adapted = [];
+    for (const block of offersData.messages || []) {
+      if (block.type !== "offer_list") continue;
+      for (const o of block.offers || []) {
+        adapted.push({
+          option_label: labels[labelIdx] || String(labelIdx + 1),
+          offer_id: o.id,
+          quote_id: `${block.category}:${o.id}`,
+          category: block.category,
+          mecano_nom: block.category === "mechanics" ? o.title : null,
+          vendeur_nom: block.category === "parts" ? o.title : null,
+          mecano_distance_km: o.distance_km,
+          prix_piece_client: block.category === "parts" ? o.price : null,
+          prix_mecano_client: block.category === "mechanics" ? o.price : null,
+          prix_transport_client: null,
+          total_client: o.price,
+          zone: o.zone,
+          tag: o.tag,
+          rating: o.rating,
+        });
+        labelIdx += 1;
+      }
+    }
+    return adapted;
+  };
+
+  const searchOptions = async (fullForm) => {
+    const r1 = await fetch(`${API_BASE}/api/mission/intake`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(buildIntakeBody(fullForm)) });
+    if (!r1.ok) throw new Error("intake " + (await r1.text()));
+    const d1 = await r1.json();
+    setInterventionId(d1.mission_id);
+
+    const r2 = await fetch(`${API_BASE}/api/mission/${d1.mission_id}/offers`, { method: "GET" });
+    if (!r2.ok) throw new Error("offers " + (await r2.text()));
     const d2 = await r2.json();
-    return d2.options || [];
+    return adaptOffersResponse(d2);
   };
 
   const handleNoResults = (type) => {
@@ -437,17 +503,30 @@ export default function ChatLingua() {
             return;
           }
           setSelectedMecano(selected.mecano_nom);
-          const pieces = options.filter(o => o.mecano_nom === selected.mecano_nom);
-          setOptions(pieces);
-          const vendeursCount = new Set(pieces.map(o => o.vendeur_nom)).size;
-          const isSame = pieces.some(o => o.vendeur_nom === selected.mecano_nom);
-          let msg = `Mecanicien choisi : ${selected.mecano_nom}.\n\n`;
-          if (isSame) {
-            msg += "Ce mecanicien propose aussi la piece directement.\n";
+          addBotMessage(`Mecanicien choisi : ${selected.mecano_nom}. Verrouillage de la selection...`);
+          setStep(STEPS.SEARCHING);
+          try {
+            const rLock = await fetch(`${API_BASE}/api/mission/${interventionId}/select`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ category: "mechanics", offer_id: selected.offer_id }),
+            });
+            if (!rLock.ok) throw new Error("select " + (await rLock.text()));
+            const lockData = await rLock.json();
+            if (!lockData.locked) {
+              addBotMessage(`Selection impossible (${lockData.reason || "raison inconnue"}). Reessayez.`);
+              setStep(STEPS.CHOOSE_MECANO);
+              break;
+            }
+            setOrder({ mission_id: interventionId, selection: lockData.selection });
+            setStep(STEPS.CHOSEN);
+            const offer = lockData.selection?.offer || {};
+            addBotMessage(`Selection verrouillee !\n\nCategorie : Mecanicien\n${offer.title || "-"}\nPrix : ${offer.price != null ? offer.price.toLocaleString() : "-"} ${offer.currency || "FCFA"}`);
+          } catch (selectErr) {
+            console.error("[ChatLingua] select mechanics", selectErr);
+            addBotMessage("Probleme technique lors du verrouillage. Reessayez.");
+            setStep(STEPS.CHOOSE_MECANO);
           }
-          msg += `Je vous propose ${pieces.length} option${pieces.length > 1 ? "s" : ""} de piece${pieces.length > 1 ? "s" : ""} chez ${vendeursCount} vendeur${vendeursCount > 1 ? "s" : ""}. Quelle piece choisissez-vous ?`;
-          addBotMessage(msg);
-          setStep(STEPS.CHOOSE_PIECE);
           break;
         }
 
@@ -459,23 +538,31 @@ export default function ChatLingua() {
             setLoading(false);
             return;
           }
-          addBotMessage(`Vous avez choisi l'Option ${choice} (${selected.vendeur_nom}). Je cree votre commande...`);
+          addBotMessage(`Vous avez choisi l'Option ${choice} (${selected.vendeur_nom}). Verrouillage de la selection...`);
           setStep(STEPS.SEARCHING);
           setSelectedOption(selected);
-          const r3 = await fetch(`${API_BASE}/api/intervention/${interventionId}/choisir-option`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ quote_id: selected.quote_id })
-          });
-          if (!r3.ok) throw new Error("choisir " + (await r3.text()));
-          const d3 = await r3.json();
-          setOrder(d3);
-          setStep(STEPS.CHOSEN);
-          const piece = selected?.prix_piece_client?.toLocaleString() || "—";
-          const mo = selected?.prix_mecano_client?.toLocaleString() || "—";
-          const transp = selected?.prix_transport_client?.toLocaleString() || "—";
-          const total = d3.total_client?.toLocaleString() || "—";
-          addBotMessage(`Commande creee avec succes !\n\nReference : ${d3.reference}\n\nDetail devis :\n• Piece : ${piece} FCFA\n• Main d'oeuvre : ${mo} FCFA\n• Transport : ${transp} FCFA\n• Total : ${total} FCFA\n\nPaiement securise par sequestre FlashMecano. Les contacts vendeur + mecano seront debloques apres paiement.`);
+          try {
+            const r3 = await fetch(`${API_BASE}/api/mission/${interventionId}/select`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ category: "parts", offer_id: selected.offer_id }),
+            });
+            if (!r3.ok) throw new Error("select " + (await r3.text()));
+            const d3 = await r3.json();
+            if (!d3.locked) {
+              addBotMessage(`Selection impossible (${d3.reason || "raison inconnue"}). Reessayez.`);
+              setStep(STEPS.CHOOSE_PIECE);
+              break;
+            }
+            setOrder({ mission_id: interventionId, selection: d3.selection });
+            setStep(STEPS.CHOSEN);
+            const offer = d3.selection?.offer || {};
+            addBotMessage(`Selection verrouillee !\n\nCategorie : Piece\n${offer.title || "-"}\nPrix : ${offer.price != null ? offer.price.toLocaleString() : "-"} ${offer.currency || "FCFA"}`);
+          } catch (selectErr) {
+            console.error("[ChatLingua] select parts", selectErr);
+            addBotMessage("Probleme technique lors du verrouillage. Reessayez.");
+            setStep(STEPS.CHOOSE_PIECE);
+          }
           break;
         }
 
@@ -497,21 +584,108 @@ export default function ChatLingua() {
     setTimeout(() => handleSendWithText(opt.option_label), 50);
   };
 
+  // Bloc B : lit EXCLUSIVEMENT payment.payment_status (jamais payment.status,
+  // qui reste "computed" pour toujours et n'est pas le statut du paiement).
+  const checkPaymentStatus = async (missionId) => {
+    try {
+      const r = await fetch(`${API_BASE}/api/mission/${missionId}/payment`);
+      if (!r.ok) return { ok: false };
+      const data = await r.json();
+      if (!data.found) return { ok: true, payment_status: null };
+      return { ok: true, payment_status: data.payment?.payment_status || null };
+    } catch (e) {
+      console.error("[ChatLingua] checkPaymentStatus", e);
+      return { ok: false };
+    }
+  };
+
+  const stopPaymentPolling = () => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+    if (pollTimeoutRef.current) {
+      clearTimeout(pollTimeoutRef.current);
+      pollTimeoutRef.current = null;
+    }
+  };
+
+  // Intervalle 5s / timeout 5min valides par vous. Un seul polling actif a
+  // la fois : stopPaymentPolling() est appele en tete pour eviter tout
+  // setInterval duplique.
+  const startPaymentPolling = (missionId) => {
+    stopPaymentPolling();
+
+    pollIntervalRef.current = setInterval(async () => {
+      const result = await checkPaymentStatus(missionId);
+      if (!result.ok) return; // erreur transitoire (HTTP non OK ou reseau) : on continue le polling
+      const status = result.payment_status; // null si found:false -- jamais traite comme un echec
+
+      if (status === "paye") {
+        stopPaymentPolling();
+        setPaymentInfo((p) => ({ ...p, payment_status: "paye" }));
+        setStep(STEPS.CLOSED);
+        addBotMessage("Votre paiement a ete confirme avec succes.\n\nVotre demande a ete transmise au partenaire concerne. Vous pourrez suivre l'evolution de votre demande depuis votre historique.\n\nMerci d'avoir utilise FlashMecano.");
+      } else if (status === "echec") {
+        stopPaymentPolling();
+        setPaymentInfo((p) => ({ ...p, payment_status: "echec" }));
+        setStep(STEPS.CLOSED);
+        addBotMessage("Le paiement a echoue.\n\nAucune commande n'a ete validee. Vous pouvez nous contacter via WhatsApp au +221 78 926 22 18 si besoin.");
+      } else if (status === "annule") {
+        stopPaymentPolling();
+        setPaymentInfo((p) => ({ ...p, payment_status: "annule" }));
+        setStep(STEPS.CLOSED);
+        addBotMessage("Le paiement a ete annule.\n\nVous pouvez nous contacter via WhatsApp au +221 78 926 22 18 si besoin.");
+      }
+      // "pending" ou found:false (status === null) : on continue silencieusement.
+    }, 5000);
+
+    pollTimeoutRef.current = setTimeout(() => {
+      stopPaymentPolling();
+      addBotMessage("Votre paiement est toujours en attente de confirmation.\n\nSi vous avez effectue le paiement, sa validation peut prendre quelques instants. Vous pourrez verifier son statut plus tard.");
+    }, 5 * 60 * 1000);
+  };
+
+  // BLOC A (P8+P9) : interventionId est la seule source de verite pour
+  // mission_id depuis P7 -- order.order_id n'existe plus dans ce contrat,
+  // jamais utilise ici. Ne simule aucun succes, n'appelle jamais le
+  // webhook : apres l'initiation, le paiement reste "pending" jusqu'au
+  // vrai callback PayDunya (hors perimetre de ce bloc).
   const handlePayment = async () => {
-    if (!order?.order_id) return;
+    if (!interventionId) return;
     setLoading(true);
     try {
-      const r = await fetch(`${API_BASE}/api/paiement/initier/${order.order_id}`, { method: "POST" });
-      if (!r.ok) throw new Error("paiement");
-      const paymentData = await r.json();
-      addBotMessage("Redirection vers la page de paiement securisee...");
-      setStep(STEPS.PAYMENT);
-      if (paymentData.payment_url) {
-        window.open(paymentData.payment_url, "_blank");
-      } else {
-        setTimeout(() => simulatePaymentSuccess(), 2000);
+      const r8 = await fetch(`${API_BASE}/api/mission/${interventionId}/payment/compute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (!r8.ok) throw new Error("compute " + (await r8.text()));
+      const d8 = await r8.json();
+      if (!d8.computed || !d8.payment) {
+        addBotMessage(`Calcul du paiement impossible (${d8.reason || "raison inconnue"}). Reessayez.`);
+        return;
       }
-    } catch {
+      setOrder((o) => ({
+        ...o,
+        payment: { id: d8.payment.id, client_amount: d8.payment.client_amount, status: d8.payment.status },
+      }));
+
+      const r9 = await fetch(`${API_BASE}/api/mission/${interventionId}/payment/initiate`, { method: "POST" });
+      if (!r9.ok) throw new Error("initiate " + (await r9.text()));
+      const d9 = await r9.json();
+      if (!d9.paydunia_url) {
+        addBotMessage(`Initiation du paiement impossible (${d9.reason || "raison inconnue"}). Reessayez.`);
+        return;
+      }
+
+      setPaymentInfo({ paydunia_url: d9.paydunia_url, payment_status: d9.payment_status });
+      addBotMessage("Redirection vers la page de paiement securisee. Le paiement reste en attente de confirmation.");
+      setStep(STEPS.PAYMENT);
+      window.open(d9.paydunia_url, "_blank");
+      startPaymentPolling(interventionId);
+    } catch (err) {
+      console.error("[ChatLingua] handlePayment", err);
       addBotMessage("Le paiement n'a pas pu etre initie. Veuillez reessayer.");
     } finally {
       setLoading(false);
@@ -521,10 +695,10 @@ export default function ChatLingua() {
   const simulatePaymentSuccess = async () => {
     setLoading(true);
     try {
+      // Le backend local /webhook-simuler/{order_id} ne lit aucun corps de
+      // requete (statut toujours force a "paye") -- aucun corps envoye ici.
       const r = await fetch(`${API_BASE}/api/paiement/webhook-simuler/${order.order_id}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ statut: "succes" }),
       });
       if (!r.ok) throw new Error("webhook");
       const data = await r.json();
@@ -539,53 +713,6 @@ export default function ChatLingua() {
     }
   };
 
-  const handleConfirmReception = async () => {
-    setLoading(true);
-    try {
-      const r = await fetch(`${API_BASE}/api/intervention/${interventionId}/livrer`, { method: "POST" });
-      if (!r.ok) throw new Error("livrer");
-      setStep(STEPS.INTERVENTION_STARTED);
-      addBotMessage("Piece recue et livree avec succes !\n\nLe mecanicien peut maintenant demarrer l'intervention.\n\nSouhaitez-vous noter le service a la fin de l'intervention ? (repondez 'oui' quand l'intervention est terminee)");
-    } catch {
-      addBotMessage("Confirmation de reception enregistree. Le mecanicien est informe.");
-      setStep(STEPS.INTERVENTION_STARTED);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStartIntervention = async () => {
-    setLoading(true);
-    try {
-      const r = await fetch(`${API_BASE}/api/intervention/${interventionId}/demarrer`, { method: "POST" });
-      if (!r.ok) throw new Error("demarrer");
-      setStep(STEPS.RATING);
-      addBotMessage("Intervention terminee !\n\nMerci d'avoir utilise FlashMecano.\n\nComment evaluez-vous le service ? Cliquez sur les etoiles ci-dessous :");
-    } catch {
-      setStep(STEPS.RATING);
-      addBotMessage("Intervention terminee !\n\nMerci d'avoir utilise FlashMecano.\n\nComment evaluez-vous le service ? Cliquez sur les etoiles ci-dessous :");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRating = async (stars) => {
-    setRating(stars);
-    setLoading(true);
-    try {
-      await fetch(`${API_BASE}/api/intervention/${interventionId}/noter`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note: stars, commentaire: "" }),
-      });
-    } catch (e) {
-      console.error(e);
-    }
-    setStep(STEPS.CLOSED);
-    setLoading(false);
-    addBotMessage(`Merci pour votre note de ${stars}/5 !\n\nVotre commande ${order?.reference || ""} est cloturee.\n\nA bientot sur FlashMecano !`);
-  };
-
   const handleKeyDown = (e) => {
     if (e.key === "Enter") handleSend();
   };
@@ -596,9 +723,6 @@ export default function ChatLingua() {
     step === STEPS.DIAGNOSTIC_FOLLOWUP ? "Repondez a la question..." :
     step === STEPS.DIAGNOSIS_RESULT ? "Oui / Non / plus de details..." :
     "Ecrivez ou appuyez sur le micro...";
-
-  // Position client (mock pour demo — remplacer par vraies coords)
-  const clientPos = { lat: 14.7167, lng: -17.4677, address: form.adresse_client || "Dakar, Senegal" };
 
   const pageBg = isDark ? "bg-gray-950 text-white" : "bg-white text-gray-900";
   const headerBg = isDark ? "border-gray-800 bg-gray-950" : "border-gray-200 bg-white";
@@ -697,80 +821,18 @@ export default function ChatLingua() {
           </div>
         )}
 
-        {/* Contacts after payment — LOCALISATION BIDIRECTIONNELLE */}
-        {step === STEPS.SHOW_CONTACTS && contacts && (
-          <div className="space-y-3 mt-2">
-            <div className={`border rounded-2xl p-4 ${isDark ? "bg-gray-800 border-green-700" : "bg-gray-50 border-green-300"}`}>
-              <h3 className="font-bold text-green-500 mb-2 flex items-center gap-2"><CheckCircle2 size={16} />Paiement confirme !</h3>
-              <p className={`text-xs mb-3 ${mutedText}`}>Vos contacts sont debloques. Votre position est partagee avec le vendeur et le mecanicien.</p>
-
-              {/* Votre position partagee */}
-              <div className={`border rounded-xl p-3 mb-3 ${isDark ? "bg-blue-900/30 border-blue-700" : "bg-blue-50 border-blue-200"}`}>
-                <p className="text-xs text-blue-500 mb-1 flex items-center gap-1"><MapPinned size={12} />Votre position (partagee)</p>
-                <p className="text-sm font-medium">{clientPos.address}</p>
-                <div className="flex gap-2 mt-2">
-                  <a href={formatMapsLink(clientPos.lat, clientPos.lng, "Ma position")} target="_blank" rel="noopener noreferrer" className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded-lg flex items-center gap-1 transition-colors">
-                    <Navigation size={10} />Voir sur Maps
-                  </a>
-                </div>
-                <p className={`text-[10px] mt-1 ${cardMuted2}`}>Le vendeur et le mecanicien voient cette position pour vous localiser.</p>
-              </div>
-
-              {/* Vendeur */}
-              <div className={`rounded-xl p-3 mb-3 ${innerCardBg}`}>
-                <p className="text-xs text-orange-500 mb-1 flex items-center gap-1"><Package size={12} />Vendeur de pieces</p>
-                <p className="font-semibold">{contacts.vendeur?.nom || "N/A"}</p>
-                <div className="flex items-center gap-2 mt-1 text-sm">
-                  <a href={`tel:${contacts.vendeur?.telephone}`} className="text-blue-500 hover:text-blue-400 flex items-center gap-1"><Phone size={14} />Appeler</a>
-                  <a href={formatWhatsAppLink(contacts.vendeur?.telephone || "", `Bonjour, je suis client FlashMecano, commande ${order?.reference || ""}. Je suis a ${clientPos.address}. Pouvez-vous confirmer la livraison ?`)} target="_blank" rel="noopener noreferrer" className="text-green-500 hover:text-green-400 flex items-center gap-1"><MessageCircle size={14} />WhatsApp</a>
-                </div>
-                <p className={`text-xs mt-1 flex items-center gap-1 ${cardMuted2}`}><MapPin size={10} />{contacts.vendeur?.adresse || "Adresse non disponible"}</p>
-                <a href={formatMapsLink(contacts.vendeur?.latitude || 14.7167, contacts.vendeur?.longitude || -17.4677, contacts.vendeur?.nom || "Vendeur")} target="_blank" rel="noopener noreferrer" className={`text-xs px-2 py-1 rounded-lg flex items-center gap-1 mt-2 w-fit transition-colors ${inputPillBg} ${chipHover}`}>
-                  <Navigation size={10} />Itineraire vers le vendeur
-                </a>
-              </div>
-
-              {/* Mecano */}
-              <div className={`rounded-xl p-3 mb-3 ${innerCardBg}`}>
-                <p className="text-xs text-blue-500 mb-1 flex items-center gap-1"><Wrench size={12} />Mecanicien</p>
-                <p className="font-semibold">{contacts.mecano?.nom || "N/A"}</p>
-                <div className="flex items-center gap-2 mt-1 text-sm">
-                  <a href={`tel:${contacts.mecano?.telephone}`} className="text-blue-500 hover:text-blue-400 flex items-center gap-1"><Phone size={14} />Appeler</a>
-                  <a href={formatWhatsAppLink(contacts.mecano?.telephone || "", `Bonjour, je suis client FlashMecano, commande ${order?.reference || ""}. Je suis a ${clientPos.address}. La piece arrive bientot, pouvez-vous confirmer votre disponibilite ?`)} target="_blank" rel="noopener noreferrer" className="text-green-500 hover:text-green-400 flex items-center gap-1"><MessageCircle size={14} />WhatsApp</a>
-                </div>
-                <p className={`text-xs mt-1 flex items-center gap-1 ${cardMuted2}`}><MapPin size={10} />{contacts.mecano?.distance || "Distance non disponible"}</p>
-                <a href={formatMapsLink(contacts.mecano?.latitude || 14.7167, contacts.mecano?.longitude || -17.4677, contacts.mecano?.nom || "Mecanicien")} target="_blank" rel="noopener noreferrer" className={`text-xs px-2 py-1 rounded-lg flex items-center gap-1 mt-2 w-fit transition-colors ${inputPillBg} ${chipHover}`}>
-                  <Navigation size={10} />Itineraire vers le mecanicien
-                </a>
-              </div>
-
-              <button onClick={handleConfirmReception} disabled={loading} className="w-full bg-orange-500 hover:bg-orange-400 text-white p-3 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50">
-                <Truck size={18} />Confirmer la reception de la piece
+        {/* Bloc 3 : secours si l'ouverture automatique (window.open) a ete
+            bloquee par le navigateur -- ouvre exactement paymentInfo.paydunia_url,
+            ne touche pas au polling, ne considere jamais le paiement reussi ici :
+            le seul statut reel reste payment.payment_status === "paye" (polling). */}
+        {step === STEPS.PAYMENT && paymentInfo?.paydunia_url && (
+          <div className="flex flex-col items-center mt-4 space-y-2">
+            <p className={`text-xs text-center ${mutedText}`}>Si la page de paiement ne s'est pas ouverte automatiquement :</p>
+            <a href={paymentInfo.paydunia_url} target="_blank" rel="noopener noreferrer" className="w-full">
+              <button className="w-full bg-green-600 hover:bg-green-500 text-white p-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all">
+                <CheckCircle2 size={18} />Ouvrir la page de paiement
               </button>
-            </div>
-          </div>
-        )}
-
-        {/* Intervention started */}
-        {step === STEPS.INTERVENTION_STARTED && (
-          <div className="flex justify-center mt-4">
-            <button onClick={handleStartIntervention} disabled={loading} className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-blue-900/50">
-              <ClipboardCheck size={18} />L'intervention est terminee
-            </button>
-          </div>
-        )}
-
-        {/* Rating */}
-        {step === STEPS.RATING && (
-          <div className="flex flex-col items-center mt-4 space-y-3">
-            <p className={`text-sm ${cardMuted}`}>Cliquez pour noter :</p>
-            <div className="flex gap-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button key={star} onClick={() => handleRating(star)} disabled={loading} className="p-2 transition-transform active:scale-110 disabled:opacity-50">
-                  <Star size={32} className={star <= rating ? "text-yellow-400 fill-yellow-400" : isDark ? "text-gray-600" : "text-gray-300"} />
-                </button>
-              ))}
-            </div>
+            </a>
           </div>
         )}
 

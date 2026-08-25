@@ -4,6 +4,7 @@ import { Wrench, MapPin, Star, MessageCircle, X, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { getPieceImage } from "../lib/pieceImages";
+import { PUBLIC_SUPPORT_PHONE } from "../lib/constants";
 
 function PieceImage({ src, alt, iconSize = 28 }) {
   const [failed, setFailed] = useState(false);
@@ -117,7 +118,7 @@ export default function Home() {
   const sectionTitle = isDark ? "text-white" : "text-gray-900";
   const mutedText = isDark ? "text-gray-400" : "text-gray-500";
 
-  const whatsappInscriptionLink = "https://wa.me/221778610660?text=Bonjour%20FlashMecano%2C%20je%20souhaite%20m'inscrire%20comme%20vendeur%20de%20pieces%20ou%20mecanicien%20partenaire.";
+  const whatsappInscriptionLink = `https://wa.me/${PUBLIC_SUPPORT_PHONE}?text=Bonjour%20FlashMecano%2C%20je%20souhaite%20m'inscrire%20comme%20vendeur%20de%20pieces%20ou%20mecanicien%20partenaire.`;
 
   const handleUrgence = () => navigate("/urgence", { state: { mode: "diagnostic" } });
 
