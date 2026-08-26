@@ -168,7 +168,12 @@ export default function ChatLingua() {
   const speak = useCallback((text) => {
     if (!audioEnabled || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text.replace(/MyLingua/g, "My Lingua"));
+    const cleanedText = text
+      .replace(/MyLingua/g, "My Lingua")
+      .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, "")
+      .replace(/[ \t]{2,}/g, " ")
+      .trim();
+    const utterance = new SpeechSynthesisUtterance(cleanedText);
     utterance.lang = "fr-FR";
     utterance.rate = 0.95;
     utterance.pitch = 1;
@@ -211,11 +216,11 @@ export default function ChatLingua() {
 
     let intro;
     if (mode === "piece") {
-      intro = `Je cherche ${initialQuery || "la piece"} pour vous. Quelle est la marque et le modele de votre vehicule ? (cette information est visible sur votre carte grise)`;
+      intro = "👋 Bonjour ! Je suis MyLingua, votre assistant intelligent FlashMecano.\n\nDites-moi simplement la pièce que vous recherchez et, si vous la connaissez, la marque ou le modèle de votre véhicule.\n\nPar exemple : « Je cherche un alternateur pour Toyota Corolla 2015 ».\n\nVous pouvez aussi m'envoyer un message vocal 🎤.\n\nJe m'occupe du reste.";
     } else if (mode === "mecano") {
       intro = "Je trouve un mecanicien pour vous. Quelle est la marque et le modele de votre vehicule ? (cette information est visible sur votre carte grise)";
     } else {
-      intro = "Bonjour, je suis MyLingua, l'intelligence artificielle de FlashMecano. Decrivez-moi votre panne et je trouve pour vous le meilleur mecanicien + la piece au meilleur prix, en moins de 2 minutes. C'est gratuit et sans engagement.";
+      intro = "👋 Bonjour ! Je suis MyLingua, votre assistant intelligent FlashMecano.\n\nDites-moi simplement ce qui arrive à votre véhicule, avec vos propres mots.\n\nPar exemple : « Ma voiture ne démarre plus ».\n\nVous pouvez aussi appuyer sur 🎤 et m'expliquer vocalement.\n\nJe vais comprendre votre problème et vous aider à trouver la meilleure solution.";
     }
     addBotMessage(intro);
     speak(intro);

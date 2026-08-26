@@ -121,6 +121,7 @@ export default function Home() {
   const whatsappInscriptionLink = `https://wa.me/${PUBLIC_SUPPORT_PHONE}?text=Bonjour%20FlashMecano%2C%20je%20souhaite%20m'inscrire%20comme%20vendeur%20de%20pieces%20ou%20mecanicien%20partenaire.`;
 
   const handleUrgence = () => navigate("/urgence", { state: { mode: "diagnostic" } });
+  const handlePiece = () => navigate("/urgence", { state: { mode: "piece" } });
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -140,9 +141,25 @@ export default function Home() {
             <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium">Garanti</span>
             <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium">Transparent</span>
           </div>
-          <button onClick={handleUrgence} className="w-full bg-orange-500 hover:bg-orange-400 text-white p-4 rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-all mb-3">
-            Intervention d'urgence
-          </button>
+          <p className="font-semibold mb-3">De quoi avez-vous besoin ?</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              onClick={handleUrgence}
+              className="bg-orange-500 hover:bg-orange-400 text-white p-5 rounded-2xl shadow-lg active:scale-95 transition-all flex flex-col items-center gap-1 text-center"
+            >
+              <span className="text-3xl">🚨</span>
+              <span className="font-bold text-lg leading-tight">J'ai besoin d'un dépannage</span>
+              <span className="text-sm text-orange-50">Un mécanicien peut venir vers moi</span>
+            </button>
+            <button
+              onClick={handlePiece}
+              className="bg-blue-600 hover:bg-blue-500 text-white p-5 rounded-2xl shadow-lg active:scale-95 transition-all flex flex-col items-center gap-1 text-center"
+            >
+              <span className="text-3xl">🔧</span>
+              <span className="font-bold text-lg leading-tight">Je cherche une pièce</span>
+              <span className="text-sm text-blue-50">Je trouve la pièce qu'il me faut</span>
+            </button>
+          </div>
         </div>
       </section>
 
