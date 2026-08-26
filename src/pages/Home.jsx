@@ -5,6 +5,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { getPieceImage } from "../lib/pieceImages";
 import { PUBLIC_SUPPORT_PHONE } from "../lib/constants";
+import useSeo from "../lib/useSeo";
+import { SEO_PAGES } from "../lib/seoConfig";
 
 function PieceImage({ src, alt, iconSize = 28 }) {
   const [failed, setFailed] = useState(false);
@@ -59,6 +61,7 @@ function formatReviewDate(dateStr) {
 export default function Home() {
   const { isDark } = useTheme();
   const navigate = useNavigate();
+  useSeo({ path: "/", ...SEO_PAGES["/"] });
   const [pieces, setPieces] = useState([]);
   const [mecanos, setMecanos] = useState([]);
   const [reviews, setReviews] = useState([]);

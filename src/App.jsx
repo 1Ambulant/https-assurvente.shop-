@@ -3,6 +3,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
+import APropos from "./pages/APropos";
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
 import PartnerDashboard from "./pages/PartnerDashboard";
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="/urgence-auth" element={<Navigate to="/urgence" replace />} />
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
+          <Route path="/a-propos" element={<APropos />} />
           <Route path="/mes-commandes" element={<MesCommandes />} />
           <Route path="/espace-vendeur" element={<Vendeur />} />
           <Route path="/cgv" element={<CGV />} />

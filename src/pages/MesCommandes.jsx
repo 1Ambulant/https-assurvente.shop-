@@ -3,6 +3,8 @@ import { Search, Phone, CheckCircle2, Circle, Star, Wrench, Package } from "luci
 import { Link } from "react-router-dom";
 import api from "../lib/api";
 import { useTheme } from "../context/ThemeContext";
+import useSeo from "../lib/useSeo";
+import { NOINDEX_PAGES } from "../lib/seoConfig";
 
 const STEP_LABELS = [
   "Diagnostic MyLingua effectue",
@@ -69,6 +71,7 @@ function CommandeCard({ h, isDark, cardBg, mutedText }) {
 
 export default function MesCommandes() {
   const { isDark } = useTheme();
+  useSeo({ path: "/mes-commandes", title: NOINDEX_PAGES["/mes-commandes"], noindex: true });
   const [tel, setTel] = useState("");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);

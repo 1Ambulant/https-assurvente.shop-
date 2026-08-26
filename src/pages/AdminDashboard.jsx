@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { TrendingUp, Users, DollarSign, AlertCircle, BarChart3, Receipt, ArrowUpRight } from "lucide-react";
 import api from "../lib/api";
 import { useAudio } from "../hooks/useAudio";
+import useSeo from "../lib/useSeo";
+import { NOINDEX_PAGES } from "../lib/seoConfig";
 
 export default function AdminDashboard() {
+  useSeo({ path: "/admin", title: NOINDEX_PAGES["/admin"], noindex: true });
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const { play } = useAudio();

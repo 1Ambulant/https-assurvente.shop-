@@ -1,7 +1,10 @@
 import { useTheme } from "../context/ThemeContext";
+import useSeo from "../lib/useSeo";
+import { SEO_PAGES } from "../lib/seoConfig";
 
 export default function CGV() {
   const { isDark } = useTheme();
+  useSeo({ path: "/cgv", ...SEO_PAGES["/cgv"] });
   const sectionTitle = isDark ? "text-white" : "text-gray-900";
   const mutedText = isDark ? "text-gray-400" : "text-gray-600";
   const cardBg = isDark ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200";

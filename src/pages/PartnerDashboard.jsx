@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { Wallet, History, Banknote, TrendingUp, Clock, CheckCircle2 } from "lucide-react";
 import api from "../lib/api";
 import { useAudio } from "../hooks/useAudio";
+import useSeo from "../lib/useSeo";
+import { NOINDEX_PAGES } from "../lib/seoConfig";
 
 export default function PartnerDashboard() {
+  useSeo({ path: "/partner", title: NOINDEX_PAGES["/partner"], noindex: true });
   const [account, setAccount] = useState(null);
   const [retraits, setRetraits] = useState([]);
   const [amount, setAmount] = useState("");

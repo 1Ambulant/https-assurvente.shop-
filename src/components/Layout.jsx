@@ -44,6 +44,7 @@ export default function Layout() {
                   <h3 className="text-white font-semibold mb-2">Navigation</h3>
                   <ul className="space-y-1.5">
                     <li><Link to="/" className="hover:text-white transition-colors">Accueil</Link></li>
+                    <li><Link to="/a-propos" className="hover:text-white transition-colors">A propos</Link></li>
                     <li><Link to="/urgence" className="hover:text-white transition-colors">Urgence</Link></li>
                     <li><Link to="/mes-commandes" className="hover:text-white transition-colors">Mes commandes</Link></li>
                     <li><Link to="/espace-vendeur" className="hover:text-white transition-colors">Espace Vendeur</Link></li>

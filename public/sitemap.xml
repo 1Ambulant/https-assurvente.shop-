@@ -1,27 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://www.flashmecano.com/</loc>
+    <loc>https://flashmecano.com/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://www.flashmecano.com/espace-vendeur</loc>
+    <loc>https://flashmecano.com/urgence</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://flashmecano.com/a-propos</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://flashmecano.com/espace-vendeur</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.flashmecano.com/cgv</loc>
+    <loc>https://flashmecano.com/cgv</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://www.flashmecano.com/mentions-legales</loc>
+    <loc>https://flashmecano.com/mentions-legales</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://www.flashmecano.com/confidentialite</loc>
+    <loc>https://flashmecano.com/confidentialite</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>

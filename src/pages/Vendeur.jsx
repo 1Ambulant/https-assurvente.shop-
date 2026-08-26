@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Zap, ShieldCheck, Users, LogOut, Plus, Phone, Lock } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { supabase } from "../lib/supabase";
+import useSeo from "../lib/useSeo";
+import { SEO_PAGES } from "../lib/seoConfig";
 
 const ICONS = [Zap, ShieldCheck, Users];
 
@@ -189,6 +191,7 @@ function VendorDashboard({ vendor, onLogout, isDark, cardBg, mutedText, sectionT
 
 export default function Vendeur() {
   const { isDark } = useTheme();
+  useSeo({ path: "/espace-vendeur", ...SEO_PAGES["/espace-vendeur"] });
   const [content, setContent] = useState(FALLBACK_CONTENT);
   const [tab, setTab] = useState("nouveau");
   const [vendor, setVendor] = useState(null);

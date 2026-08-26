@@ -3,8 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useAudio } from "../hooks/useAudio";
 import { Phone, Lock, LogIn, Shield, Wrench } from "lucide-react";
+import useSeo from "../lib/useSeo";
+import { NOINDEX_PAGES } from "../lib/seoConfig";
 
 export default function Login() {
+  useSeo({ path: "/login", title: NOINDEX_PAGES["/login"], noindex: true });
   const [telephone, setTelephone] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("client");

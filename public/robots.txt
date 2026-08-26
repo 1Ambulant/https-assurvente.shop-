@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.flashmecano.com/sitemap.xml
+Sitemap: https://flashmecano.com/sitemap.xml

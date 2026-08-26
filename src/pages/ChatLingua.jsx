@@ -3,6 +3,8 @@ import { Send, ArrowLeft, Wrench, MapPin, Package, CheckCircle2, Mic, Volume2, V
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import api from "../lib/api";
+import useSeo from "../lib/useSeo";
+import { SEO_PAGES } from "../lib/seoConfig";
 
 const STEPS = {
   ASK_SYMPTOMS: "ask_symptoms",
@@ -132,6 +134,7 @@ export default function ChatLingua() {
   const location = useLocation();
   const { isDark } = useTheme();
   const mode = location.state?.mode || "diagnostic";
+  useSeo({ path: "/urgence", ...SEO_PAGES["/urgence"] });
   const initialQuery = location.state?.query || "";
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
