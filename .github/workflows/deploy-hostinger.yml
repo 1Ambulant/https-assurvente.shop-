@@ -13,31 +13,43 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Upload dist/ to VPS (temp folder)
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify dist/index.html exists
+        run: test -f dist/index.html
+
+      - name: Upload dist/ to staging (flashmecano-deploy)
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.HOSTINGER_SSH_HOST }}
+          port: ${{ secrets.HOSTINGER_SSH_PORT }}
           username: ${{ secrets.HOSTINGER_SSH_USER }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
           source: "dist"
-          target: "/tmp/flashmecano-new"
+          target: "/var/www/flashmecano-deploy/releases/current"
           strip_components: 0
           overwrite: true
 
-      - name: Deploy on VPS (swap dist, reload nginx)
+      - name: Run deploy-flashmecano on VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOSTINGER_SSH_HOST }}
+          port: ${{ secrets.HOSTINGER_SSH_PORT }}
           username: ${{ secrets.HOSTINGER_SSH_USER }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
           script: |
             set -e
-            sudo rm -rf /var/www/flashmecano/dist/*
-            sudo cp -r /tmp/flashmecano-new/dist/* /var/www/flashmecano/dist/
-            sudo chown -R www-data:www-data /var/www/flashmecano/dist
-            sudo chmod -R 755 /var/www/flashmecano/dist
-            rm -rf /tmp/flashmecano-new
-            sudo nginx -t
-            sudo systemctl reload nginx
-            echo "Deployed assets:"
-            ls -la /var/www/flashmecano/dist/assets/
+            cp -a /var/www/flashmecano-deploy/releases/current/dist/. /var/www/flashmecano-deploy/releases/current/
+            rm -rf /var/www/flashmecano-deploy/releases/current/dist
+            sudo /usr/local/sbin/deploy-flashmecano
+            test -f /var/www/flashmecano/dist/index.html && echo "DIST_INDEX_OK" || (echo "DIST_INDEX_MISSING" && exit 1)
