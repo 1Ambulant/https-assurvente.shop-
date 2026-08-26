@@ -21,18 +21,24 @@ export default function ImageUploader({ productId, onUpload, className = "" }) {
         alwaysKeepResolution: false,
       };
       const compressed = await imageCompression(file, options);
-      const url = URL.createObjectURL(compressed);
-      setPreview(url);
-      if (productId) {
-        const formData = new FormData();
-        formData.append("file", compressed, `${productId}.webp`);
-        const res = await fetch(`/api/vendor/upload-image/${productId}`, {
-          method: "POST",
-          body: formData,
-        });
-        if (!res.ok) throw new Error("Upload failed");
-      }
-      onUpload?.(url, compressed);
+      setPreview(URL.createObjectURL(compressed));
+
+      // Upload reel vers POST /api/vendor/piece-photo (backend FlashMecano,
+      // verifie en production le 2026-08-26) : stockage Supabase Storage
+      // reel, bucket "pieces-photos", authentifie par le token de session
+      // vendeur. Retourne une URL publique reelle -- rien n'est simule.
+      const token = localStorage.getItem("flashmecano_vendor_token");
+      const formData = new FormData();
+      formData.append("file", compressed, "piece.webp");
+      const res = await fetch("/api/vendor/piece-photo", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) throw new Error(data.detail || "Echec de l'envoi de la photo");
+
+      onUpload?.(data.url);
       play("success");
     } catch (err) {
       play("error");
