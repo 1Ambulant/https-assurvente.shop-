@@ -118,7 +118,8 @@ export default function Home() {
   const sectionTitle = isDark ? "text-white" : "text-gray-900";
   const mutedText = isDark ? "text-gray-400" : "text-gray-500";
 
-  const whatsappInscriptionLink = `https://wa.me/${PUBLIC_SUPPORT_PHONE}?text=Bonjour%20FlashMecano%2C%20je%20souhaite%20m'inscrire%20comme%20vendeur%20de%20pieces%20ou%20mecanicien%20partenaire.`;
+  const whatsappInscriptionMessage = "Bonjour FlashMecano 👋\n\nJe souhaite rejoindre FlashMecano en tant que partenaire.\n\nJe souhaite m'inscrire comme :\n\n1️⃣ Mécanicien / Garage\n\n2️⃣ Vendeur de pièces\n\nRépondez simplement 1 ou 2 pour commencer.";
+  const whatsappInscriptionLink = `https://wa.me/${PUBLIC_SUPPORT_PHONE}?text=${encodeURIComponent(whatsappInscriptionMessage)}`;
 
   const handleUrgence = () => navigate("/urgence", { state: { mode: "diagnostic" } });
   const handlePiece = () => navigate("/urgence", { state: { mode: "piece" } });
