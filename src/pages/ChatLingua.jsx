@@ -149,7 +149,10 @@ export default function ChatLingua() {
   const [followUpIndex, setFollowUpIndex] = useState(0);
   const [followUpAnswers, setFollowUpAnswers] = useState([]);
   const [isListening, setIsListening] = useState(false);
-  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [voiceDraft, setVoiceDraft] = useState(null);
+  // Aucune voix ne doit se declencher automatiquement : le bouton
+  // Volume2/VolumeX existant reste le seul moyen d'activer la lecture vocale.
+  const [audioEnabled, setAudioEnabled] = useState(false);
   const [contacts, setContacts] = useState(null);
   const [selectedMecano, setSelectedMecano] = useState(null);
   const [mecanoOptions, setMecanoOptions] = useState([]);
@@ -169,7 +172,7 @@ export default function ChatLingua() {
     if (!audioEnabled || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const cleanedText = text
-      .replace(/MyLingua/g, "My Lingua")
+      .replace(/MyLingua/gi, "MyLinguoua")
       .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, "")
       .replace(/[ \t]{2,}/g, " ")
       .trim();
@@ -190,20 +193,47 @@ export default function ChatLingua() {
     recognition.lang = "fr-FR";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
+    // gotResult/errorReported sont locaux a cette session d'ecoute (nouvelle
+    // closure a chaque startListening) : onend ne doit jamais effacer
+    // voiceDraft, il sert uniquement a detecter le cas "rien reconnu".
+    let gotResult = false;
+    let errorReported = false;
     recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
     recognition.onerror = () => {
+      errorReported = true;
       setIsListening(false);
       addBotMessage("Je n'ai pas compris. Veuillez repeter ou ecrire.");
     };
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
-      setInput(transcript);
-      setTimeout(() => handleSendWithText(transcript), 300);
+      if (transcript && transcript.trim()) {
+        gotResult = true;
+        setVoiceDraft(transcript);
+      }
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+      // Arret volontaire (stop()) avant toute parole detectee, ou silence :
+      // le texte deja reconnu (s'il existe) reste dans voiceDraft, on ne le
+      // touche pas ici. On previent seulement si rien n'a ete capture.
+      if (!gotResult && !errorReported) {
+        addBotMessage("Je n'ai rien entendu. Appuyez a nouveau sur le micro pour reessayer.");
+      }
     };
     recognitionRef.current = recognition;
     recognition.start();
   }, []);
+
+  const handleVoiceRestart = useCallback(() => {
+    setVoiceDraft(null);
+    startListening();
+  }, [startListening]);
+
+  const handleVoiceSend = () => {
+    const transcript = voiceDraft;
+    setVoiceDraft(null);
+    if (transcript) handleSendWithText(transcript);
+  };
 
   const stopListening = useCallback(() => {
     recognitionRef.current?.stop();
@@ -216,11 +246,11 @@ export default function ChatLingua() {
 
     let intro;
     if (mode === "piece") {
-      intro = "👋 Bonjour ! Je suis MyLingua, votre assistant intelligent FlashMecano.\n\nDites-moi simplement la pièce que vous recherchez et, si vous la connaissez, la marque ou le modèle de votre véhicule.\n\nPar exemple : « Je cherche un alternateur pour Toyota Corolla 2015 ».\n\nVous pouvez aussi m'envoyer un message vocal 🎤.\n\nJe m'occupe du reste.";
+      intro = "👋 Bonjour ! Je suis MyLingua, l’assistant IA de FlashMecano. Dites-moi simplement la pièce que vous recherchez, je vous aiderai à la trouver.";
     } else if (mode === "mecano") {
       intro = "Je trouve un mecanicien pour vous. Quelle est la marque et le modele de votre vehicule ? (cette information est visible sur votre carte grise)";
     } else {
-      intro = "👋 Bonjour ! Je suis MyLingua, votre assistant intelligent FlashMecano.\n\nDites-moi simplement ce qui arrive à votre véhicule, avec vos propres mots.\n\nPar exemple : « Ma voiture ne démarre plus ».\n\nVous pouvez aussi appuyer sur 🎤 et m'expliquer vocalement.\n\nJe vais comprendre votre problème et vous aider à trouver la meilleure solution.";
+      intro = "👋 Bonjour ! Je suis MyLingua, l’assistant IA de FlashMecano. Dites-moi ce qui arrive à votre véhicule, je vous aiderai à trouver la meilleure solution.";
     }
     addBotMessage(intro);
     speak(intro);
@@ -876,12 +906,28 @@ export default function ChatLingua() {
         className={`fixed bottom-0 left-0 right-0 z-50 p-3 border-t shrink-0 ${inputBarBg}`}
         style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
       >
-        <div className={`flex items-center gap-2 rounded-full px-4 py-2 ${inputPillBg}`}>
-          <button onClick={isListening ? stopListening : startListening} className={`p-2 rounded-full transition-colors shrink-0 ${isListening ? "bg-red-500 text-white animate-pulse" : inputIconIdle}`}><Mic size={18} /></button>
-          <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholderText} className={`flex-1 bg-transparent text-sm outline-none ${inputText}`} disabled={loading || step === STEPS.SEARCHING || step === STEPS.PAYMENT || step === STEPS.SHOW_CONTACTS || step === STEPS.INTERVENTION_STARTED || step === STEPS.RATING || step === STEPS.CLOSED || step === STEPS.NO_RESULTS} />
-          <button onClick={handleSend} disabled={loading || !input.trim() || step === STEPS.SHOW_CONTACTS || step === STEPS.INTERVENTION_STARTED || step === STEPS.RATING || step === STEPS.CLOSED || step === STEPS.NO_RESULTS} className="p-2 text-blue-500 hover:text-blue-400 disabled:opacity-30 transition-colors shrink-0"><Send size={18} /></button>
-        </div>
-        {isListening && <p className="text-center text-xs text-red-400 mt-1 animate-pulse">Ecoute en cours... parlez</p>}
+        {voiceDraft ? (
+          <div className={`rounded-2xl px-4 py-3 ${inputPillBg}`}>
+            <p className={`text-sm mb-3 ${inputText}`}>🎤 Message vocal pret : « {voiceDraft} »</p>
+            <div className="flex gap-2">
+              <button onClick={handleVoiceRestart} className={`flex-1 p-3 rounded-xl font-semibold transition-all active:scale-95 ${isDark ? "bg-gray-800 text-gray-200 hover:bg-gray-700" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}>
+                🔄 Recommencer
+              </button>
+              <button onClick={handleVoiceSend} className="flex-1 p-3 rounded-xl font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-all active:scale-95">
+                ➤ Envoyer
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className={`flex items-center gap-2 rounded-full px-4 py-2 ${inputPillBg}`}>
+              <button onClick={isListening ? stopListening : startListening} className={`p-2 rounded-full transition-colors shrink-0 ${isListening ? "bg-red-500 text-white animate-pulse" : inputIconIdle}`}><Mic size={18} /></button>
+              <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholderText} className={`flex-1 bg-transparent text-sm outline-none ${inputText}`} disabled={loading || step === STEPS.SEARCHING || step === STEPS.PAYMENT || step === STEPS.SHOW_CONTACTS || step === STEPS.INTERVENTION_STARTED || step === STEPS.RATING || step === STEPS.CLOSED || step === STEPS.NO_RESULTS} />
+              <button onClick={handleSend} disabled={loading || !input.trim() || step === STEPS.SHOW_CONTACTS || step === STEPS.INTERVENTION_STARTED || step === STEPS.RATING || step === STEPS.CLOSED || step === STEPS.NO_RESULTS} className="p-2 text-blue-500 hover:text-blue-400 disabled:opacity-30 transition-colors shrink-0"><Send size={18} /></button>
+            </div>
+            {isListening && <p className="text-center text-xs text-red-400 mt-1 animate-pulse">🎤 Enregistrement... parlez</p>}
+          </>
+        )}
       </div>
     </div>
   );
