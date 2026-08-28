@@ -77,6 +77,21 @@ function VendorDashboard({ vendor, onLogout, isDark, cardBg, mutedText, sectionT
   const [formError, setFormError] = useState("");
   const [photoTargetId, setPhotoTargetId] = useState(null);
 
+  // H10a : profil vendeur reellement modifiable (name/address/neighborhood/
+  // specialty) -- phone volontairement absent, c'est l'identifiant de
+  // connexion OTP, jamais modifiable depuis cette section.
+  const [profile, setProfile] = useState(vendor);
+  const [showProfileForm, setShowProfileForm] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    name: vendor.name || "",
+    address: vendor.garage || "",
+    neighborhood: vendor.neighborhood || "",
+    specialty: vendor.specialty || "",
+  });
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [profileSuccess, setProfileSuccess] = useState("");
+
   const loadProducts = async () => {
     setLoading(true);
     const { ok, data } = await vendorApiFetch(`/${vendor.id}/pieces`);
@@ -84,8 +99,36 @@ function VendorDashboard({ vendor, onLogout, isDark, cardBg, mutedText, sectionT
     if (ok && data.success) setProducts(data.pieces);
   };
 
+  const applyProfile = (v) => {
+    setProfile(v);
+    setProfileForm({
+      name: v.name || "",
+      address: v.address || "",
+      neighborhood: v.neighborhood || "",
+      specialty: v.specialty || "",
+    });
+    const stored = localStorage.getItem("flashmecano_vendor");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        localStorage.setItem(
+          "flashmecano_vendor",
+          JSON.stringify({ ...parsed, name: v.name, garage: v.address, neighborhood: v.neighborhood })
+        );
+      } catch {
+        // localStorage corrompu -- non bloquant, la session reste valide via le token.
+      }
+    }
+  };
+
+  const loadProfile = async () => {
+    const { ok, data } = await vendorApiFetch("/me");
+    if (ok && data.success && data.vendor) applyProfile(data.vendor);
+  };
+
   useEffect(() => {
     loadProducts();
+    loadProfile();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vendor.id]);
 
@@ -143,14 +186,93 @@ function VendorDashboard({ vendor, onLogout, isDark, cardBg, mutedText, sectionT
     loadProducts();
   };
 
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    setProfileError("");
+    setProfileSuccess("");
+    setProfileSaving(true);
+    const { ok, data } = await vendorApiFetch("/me", {
+      method: "PATCH",
+      body: JSON.stringify({
+        name: profileForm.name.trim(),
+        address: profileForm.address.trim(),
+        neighborhood: profileForm.neighborhood.trim(),
+        specialty: profileForm.specialty.trim(),
+      }),
+    });
+    setProfileSaving(false);
+    if (!ok || !data.success) {
+      setProfileError(data.message || "Impossible d'enregistrer les modifications. Reessayez.");
+      return;
+    }
+    applyProfile(data.vendor);
+    setProfileSuccess("Profil mis a jour.");
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className={`text-lg font-bold ${sectionTitle}`}>Bienvenue, {vendor.name}</h2>
+        <h2 className={`text-lg font-bold ${sectionTitle}`}>Bienvenue, {profile.name || vendor.name}</h2>
         <button onClick={onLogout} className={`p-2 rounded-full ${isDark ? "text-gray-400 hover:bg-gray-800" : "text-gray-500 hover:bg-gray-100"}`}>
           <LogOut size={18} />
         </button>
       </div>
+
+      {!showProfileForm ? (
+        <button
+          onClick={() => setShowProfileForm(true)}
+          className={`w-full text-sm font-semibold p-2.5 rounded-xl border transition-all ${isDark ? "border-gray-800 text-gray-300 hover:bg-gray-800" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}
+        >
+          Modifier mon profil
+        </button>
+      ) : (
+        <form onSubmit={handleUpdateProfile} className={`${cardBg} border rounded-2xl p-4 space-y-3`}>
+          <h3 className={`text-sm font-bold ${sectionTitle}`}>Modifier mon profil</h3>
+          <input
+            type="text"
+            placeholder="Nom"
+            value={profileForm.name}
+            onChange={(e) => setProfileForm((f) => ({ ...f, name: e.target.value }))}
+            className={`w-full px-3 py-2.5 rounded-xl border text-sm outline-none ${isDark ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500" : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"}`}
+          />
+          <input
+            type="text"
+            placeholder="Adresse"
+            value={profileForm.address}
+            onChange={(e) => setProfileForm((f) => ({ ...f, address: e.target.value }))}
+            className={`w-full px-3 py-2.5 rounded-xl border text-sm outline-none ${isDark ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500" : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"}`}
+          />
+          <input
+            type="text"
+            placeholder="Quartier"
+            value={profileForm.neighborhood}
+            onChange={(e) => setProfileForm((f) => ({ ...f, neighborhood: e.target.value }))}
+            className={`w-full px-3 py-2.5 rounded-xl border text-sm outline-none ${isDark ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500" : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"}`}
+          />
+          <input
+            type="text"
+            placeholder="Specialite"
+            value={profileForm.specialty}
+            onChange={(e) => setProfileForm((f) => ({ ...f, specialty: e.target.value }))}
+            className={`w-full px-3 py-2.5 rounded-xl border text-sm outline-none ${isDark ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500" : "bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"}`}
+          />
+          <p className={`text-xs ${mutedText}`}>Telephone : {vendor.phone} (non modifiable)</p>
+          {profileError && <p className="text-xs text-red-500">{profileError}</p>}
+          {profileSuccess && <p className="text-xs text-green-600">{profileSuccess}</p>}
+          <div className="flex gap-2">
+            <button type="submit" disabled={profileSaving} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-xl font-bold disabled:opacity-50 transition-all">
+              {profileSaving ? "Enregistrement..." : "Enregistrer les modifications"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowProfileForm(false); setProfileError(""); setProfileSuccess(""); }}
+              className={`px-4 rounded-xl font-semibold ${isDark ? "bg-gray-800 text-gray-300" : "bg-gray-200 text-gray-700"}`}
+            >
+              Fermer
+            </button>
+          </div>
+        </form>
+      )}
 
       {loading ? (
         <p className={`text-sm ${mutedText}`}>Chargement de vos pieces...</p>
