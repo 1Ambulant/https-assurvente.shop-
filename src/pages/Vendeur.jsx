@@ -76,6 +76,10 @@ function VendorDashboard({ vendor, onLogout, isDark, cardBg, mutedText, sectionT
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [photoTargetId, setPhotoTargetId] = useState(null);
+  // H10b : retrait d'une photo sans remplacement -- reutilise PATCH /piece/:id
+  // avec image_url:null, deja accepte par le backend (voir handlePhotoUploaded).
+  const [photoRemoving, setPhotoRemoving] = useState(null);
+  const [photoError, setPhotoError] = useState("");
 
   // H10a : profil vendeur reellement modifiable (name/address/neighborhood/
   // specialty) -- phone volontairement absent, c'est l'identifiant de
@@ -183,6 +187,18 @@ function VendorDashboard({ vendor, onLogout, isDark, cardBg, mutedText, sectionT
   const handlePhotoUploaded = async (pieceId, url) => {
     setPhotoTargetId(null);
     await vendorApiFetch(`/piece/${pieceId}`, { method: "PATCH", body: JSON.stringify({ image_url: url }) });
+    loadProducts();
+  };
+
+  const handleRemovePhoto = async (pieceId) => {
+    setPhotoError("");
+    setPhotoRemoving(pieceId);
+    const { ok, data } = await vendorApiFetch(`/piece/${pieceId}`, { method: "PATCH", body: JSON.stringify({ image_url: null }) });
+    setPhotoRemoving(null);
+    if (!ok || !data.success) {
+      setPhotoError(data.message || "Impossible de retirer la photo. Reessayez.");
+      return;
+    }
     loadProducts();
   };
 
@@ -309,7 +325,20 @@ function VendorDashboard({ vendor, onLogout, isDark, cardBg, mutedText, sectionT
                 </button>
               </div>
               {photoTargetId === p.id && (
-                <ImageUploader className="h-28" onUpload={(url) => handlePhotoUploaded(p.id, url)} />
+                <div className="space-y-2">
+                  <ImageUploader className="h-28" onUpload={(url) => handlePhotoUploaded(p.id, url)} />
+                  {p.image_url && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePhoto(p.id)}
+                      disabled={photoRemoving === p.id}
+                      className="w-full text-xs font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 p-2 rounded-xl transition-all disabled:opacity-50"
+                    >
+                      {photoRemoving === p.id ? "Retrait..." : "Retirer la photo"}
+                    </button>
+                  )}
+                  {photoError && <p className="text-xs text-red-500">{photoError}</p>}
+                </div>
               )}
             </div>
           ))}
